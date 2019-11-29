@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/mattermost/mmgovet/license"
-	"github.com/mattermost/mmgovet/structuredLogging"
+	"github.com/mattermost/mattermost-govet/license"
+	"github.com/mattermost/mattermost-govet/structuredLogging"
 	"golang.org/x/tools/go/analysis/unitchecker"
 )
 
