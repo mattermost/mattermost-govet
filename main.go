@@ -2,13 +2,15 @@ package main
 
 import (
 	"github.com/mattermost/mmgovet/license"
-	"golang.org/x/tools/go/analysis/multichecker"
+	"github.com/mattermost/mmgovet/structuredLogging"
+	"golang.org/x/tools/go/analysis/unitchecker"
 )
 
 func main() {
-	multichecker.Main(
+	unitchecker.Main(
 		license.Analyzer,
-		// structuredLogging.Analyzer,
+		license.EEAnalyzer,
+		structuredLogging.Analyzer,
 		// appErrorWhere.Analyzer,
 	)
 }
