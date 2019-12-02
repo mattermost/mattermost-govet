@@ -32,6 +32,12 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	}
 
 	for _, file := range pass.Files {
+		// Ignore file copied from enterprise
+		fileObj := pass.Fset.File(file.Pos())
+		if strings.HasSuffix(fileObj.Name(), "imports/imports.go") {
+			continue
+		}
+
 		if len(file.Comments) == 0 {
 			pass.Reportf(file.Pos(), "License not found")
 			continue
