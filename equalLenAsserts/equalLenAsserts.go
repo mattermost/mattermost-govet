@@ -31,40 +31,51 @@ func run(pass *analysis.Pass) (interface{}, error) {
 					return true
 				}
 
-				if fun.Sel.Name != "Equal" || (module.Name != "require" && module.Name != "assert") {
-					return true
-				}
-
-				for _, arg := range callExpr.Args {
-					call, ok := arg.(*ast.CallExpr)
-					if ok {
-						callFun, ok := call.Fun.(*ast.Ident)
+				if fun.Sel.Name == "Equal" && (module.Name == "require" || module.Name == "assert") {
+					hasLen := false
+					hasZero := false
+					for _, arg := range callExpr.Args {
+						literal, ok := arg.(*ast.BasicLit)
 						if ok {
-							if callFun.Name == "len" {
-								pass.Reportf(callFun.Pos(), "calling len inside require/assert.Equal, please use require/assert.Len instead")
-								return false
+							if literal.Value == "0" {
+								hasZero = true
+							}
+						}
+
+						call, ok := arg.(*ast.CallExpr)
+						if ok {
+							callFun, ok := call.Fun.(*ast.Ident)
+							if ok {
+								if callFun.Name == "len" {
+									hasLen = true
+								}
 							}
 						}
 					}
+					if hasLen && hasZero {
+						pass.Reportf(callExpr.Pos(), "calling len inside require/assert.Equal and comparing to 0, please use require/assert.Empty instead")
+						return false
+					}
+					if hasLen {
+						pass.Reportf(callExpr.Pos(), "calling len inside require/assert.Equal, please use require/assert.Len instead")
+						return false
+					}
 				}
+
+				if fun.Sel.Name == "Len" && (module.Name == "require" || module.Name == "assert") {
+					if len(callExpr.Args) < 3 {
+						return true
+					}
+
+					literal, ok := callExpr.Args[2].(*ast.BasicLit)
+					if ok {
+						if literal.Value == "0" {
+							pass.Reportf(callExpr.Pos(), "calling require/assert.Len comparing to 0, please use require/assert.Empty instead")
+						}
+					}
+				}
+
 				return true
-
-				// 				ast.Inspect(fun, func(subnode ast.Node) bool {
-				// 					switch y := subnode.(type) {
-				// 					case *ast.CallExpr:
-				// 						subfun, ok := y.Fun.(*ast.Ident)
-				// 						if !ok {
-				// 							return true
-				// 						}
-
-				// 						if subfun.Name != "len" {
-				// 							return true
-				// 						}
-
-				// 						pass.Reportf(subnode.Pos(), "calling len inside assert")
-				// 					}
-				// 					return true
-				// 				})
 			}
 			return true
 		})
