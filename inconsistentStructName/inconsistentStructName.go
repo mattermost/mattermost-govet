@@ -47,7 +47,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 						} else if firstVarNameForType[typeIdent.Name].Name != varName {
 							otherVarName := firstVarNameForType[typeIdent.Name].Name
 							otherVarPosition := pass.Fset.Position(firstVarNameForType[typeIdent.Name].Node.Pos())
-							pass.Reportf(node.Pos(), "Different variable name used for the same struct in different methods, using %s here but was named as %s before at %s", varName, otherVarName, otherVarPosition.String())
+							pass.Reportf(node.Pos(), "Different variable name used for the struct %s in different methods, using %s here but was named as %s before at %s", typeIdent.Name, varName, otherVarName, otherVarPosition.String())
 						}
 					}
 				}
