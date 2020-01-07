@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/mattermost/mattermost-govet/equalLenAsserts"
-	"github.com/mattermost/mattermost-govet/inconsistentStructName"
+	"github.com/mattermost/mattermost-govet/inconsistentReceiverName"
 	"github.com/mattermost/mattermost-govet/license"
 	"github.com/mattermost/mattermost-govet/structuredLogging"
 	"github.com/mattermost/mattermost-govet/tFatal"
@@ -17,6 +17,6 @@ func main() {
 		// appErrorWhere.Analyzer,
 		tFatal.Analyzer,
 		equalLenAsserts.Analyzer,
-		inconsistentStructName.Analyzer,
+		inconsistentReceiverName.Analyzer,
 	)
 }
