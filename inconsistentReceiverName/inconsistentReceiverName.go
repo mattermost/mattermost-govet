@@ -54,7 +54,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 						otherReceiverPosition := pass.Fset.Position(firstReceiver.Node.Pos())
 						pass.Reportf(
 							node.Pos(),
-							"Different receiver name used for the struct %s in different methods: using %s here but was named as %s before at %s",
+							"Different receiver name used for the struct \"%s\" in different methods: using \"%s\" here but was named as \"%s\" before at %s",
 							typeIdent.Name,
 							currentReceiverName,
 							otherReceiverName,

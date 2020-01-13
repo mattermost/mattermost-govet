@@ -57,7 +57,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 					return true
 				}
 
-				pass.Reportf(node.Pos(), "Using fmt formating, use structured logging instead.")
+				pass.Reportf(node.Pos(), "Using fmt inside mlog function, use structured logging instead (example: mlog.Debug(\"Log message\", mlog.String(\"data_name\", data))).")
 			}
 			return true
 		})

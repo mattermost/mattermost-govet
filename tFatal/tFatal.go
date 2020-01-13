@@ -34,7 +34,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 					return true
 				}
 
-				pass.Reportf(node.Pos(), "using t.Fatal")
+				pass.Reportf(node.Pos(), "t.Fatal usage is not allowed. Use semantic assertions with require or assert modules from testify package.")
 			}
 			return true
 		})
