@@ -7,15 +7,20 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
+	"go/types"
 	"strings"
 
+	"github.com/mattermost/mattermost-govet/facts"
 	"golang.org/x/tools/go/analysis"
+	"golang.org/x/tools/go/analysis/passes/inspect"
+	"golang.org/x/tools/go/ast/inspector"
 )
 
 var Analyzer = &analysis.Analyzer{
-	Name: "apiAuditLogs",
-	Doc:  "check the audit logs usage in the API",
-	Run:  run,
+	Name:     "apiAuditLogs",
+	Doc:      "check the audit logs usage in the API",
+	Requires: []*analysis.Analyzer{inspect.Analyzer, facts.ApiHandlerFacts},
+	Run:      run,
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
@@ -194,136 +199,92 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		return nil, nil
 	}
 
-	for _, file := range pass.Files {
-		if strings.HasSuffix(pass.Fset.File(file.Pos()).Name(), "_test.go") {
-			continue
+	inspect := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
+	nodeFilter := []ast.Node{
+		(*ast.FuncDecl)(nil),
+	}
+	inspect.Preorder(nodeFilter, func(n ast.Node) {
+		funDecl := n.(*ast.FuncDecl)
+
+		if strings.HasSuffix(pass.Fset.File(n.Pos()).Name(), "_test.go") {
+			return
 		}
-		if strings.HasSuffix(pass.Fset.File(file.Pos()).Name(), "apitestlib.go") {
-			continue
+		if strings.HasSuffix(pass.Fset.File(n.Pos()).Name(), "apitestlib.go") {
+			return
 		}
-		ast.Inspect(file, func(node ast.Node) bool {
-			switch funDecl := node.(type) {
-			case *ast.FuncDecl:
-				if whiteList[funDecl.Name.Name] {
-					return false
-				}
-				if !isApiHandler(funDecl) {
-					return false
-				}
-				initializationFound := false
-				logCallFound := false
-				successCallFound := false
-				ast.Inspect(funDecl, func(node ast.Node) bool {
-					switch n := node.(type) {
-					case *ast.CallExpr:
-						fun, ok := n.Fun.(*ast.SelectorExpr)
-						if !ok {
-							return true
-						}
-
-						ident, ok := fun.X.(*ast.Ident)
-						if !ok {
-							return true
-						}
-
-						// must have a auditRec.Success()
-						if ident.Name == "auditRec" && fun.Sel.Name == "Success" {
-							successCallFound = true
-						}
-						if ident.Name == "c" && (fun.Sel.Name == "LogAuditRec" || fun.Sel.Name == "LogAuditRecWithLevel") {
-							logCallFound = true
-						}
-
-						if ident.Name == "c" && fun.Sel.Name == "MakeAuditRecord" {
-							initializationFound = true
-							firstArg, ok := n.Args[0].(*ast.BasicLit)
-							if !ok {
-								pass.Reportf(n.Args[0].Pos(), "Invalid record name, expected \"%s\", found \"%v\"", funDecl.Name.Name, n.Args[0])
-								return true
-							}
-							secondArg, ok := n.Args[1].(*ast.SelectorExpr)
-							if !ok {
-								pass.Reportf(n.Args[1].Pos(), "Invalid initial state for record, expected \"audit.Fail\", found \"%v\"", n.Args[1])
-								return true
-							}
-							if firstArg.Kind != token.STRING || firstArg.Value != fmt.Sprintf("\"%s\"", funDecl.Name.Name) {
-								pass.Reportf(n.Args[0].Pos(), "Invalid record name, expected \"%s\", found %s", funDecl.Name.Name, firstArg.Value)
-								return true
-							}
-							secondArgX, ok := secondArg.X.(*ast.Ident)
-							if !ok {
-								pass.Reportf(n.Args[1].Pos(), "Invalid initial state for record, expected \"audit.Fail\", found \"%v\"", secondArg.X)
-								return true
-							}
-							if secondArgX.Name != "audit" || secondArg.Sel.Name != "Fail" {
-								pass.Reportf(n.Args[1].Pos(), "Invalid initial state for record, expected \"audit.Fail\", found \"%s.%s\"", secondArgX.Name, secondArg.Sel.Name)
-								return true
-							}
-						}
-					}
+		if obj, ok := pass.TypesInfo.Defs[funDecl.Name].(*types.Func); ok {
+			var fact facts.IsApiHandler
+			if !pass.ImportObjectFact(obj, &fact) {
+				return
+			}
+		}
+		if whiteList[funDecl.Name.Name] {
+			return
+		}
+		initializationFound := false
+		logCallFound := false
+		successCallFound := false
+		ast.Inspect(funDecl, func(node ast.Node) bool {
+			switch n := node.(type) {
+			case *ast.CallExpr:
+				fun, ok := n.Fun.(*ast.SelectorExpr)
+				if !ok {
 					return true
-				})
-				if !initializationFound {
-					pass.Reportf(funDecl.Pos(), "Expected audit log in this function, but not found, please add the audit logs or add the \"%s\" function to the white list", funDecl.Name.Name)
-				} else {
-					if !logCallFound {
-						pass.Reportf(funDecl.Pos(), "Expected LogAuditRec or LogAuditRecWithLevel call, but not found")
+				}
+
+				ident, ok := fun.X.(*ast.Ident)
+				if !ok {
+					return true
+				}
+
+				// must have a auditRec.Success()
+				if ident.Name == "auditRec" && fun.Sel.Name == "Success" {
+					successCallFound = true
+				}
+				if ident.Name == "c" && (fun.Sel.Name == "LogAuditRec" || fun.Sel.Name == "LogAuditRecWithLevel") {
+					logCallFound = true
+				}
+
+				if ident.Name == "c" && fun.Sel.Name == "MakeAuditRecord" {
+					initializationFound = true
+					firstArg, ok := n.Args[0].(*ast.BasicLit)
+					if !ok {
+						pass.Reportf(n.Args[0].Pos(), "Invalid record name, expected \"%s\", found \"%v\"", funDecl.Name.Name, n.Args[0])
+						return true
 					}
-					if !successCallFound {
-						pass.Reportf(funDecl.Pos(), "Expected Success call, but not found")
+					secondArg, ok := n.Args[1].(*ast.SelectorExpr)
+					if !ok {
+						pass.Reportf(n.Args[1].Pos(), "Invalid initial state for record, expected \"audit.Fail\", found \"%v\"", n.Args[1])
+						return true
+					}
+					if firstArg.Kind != token.STRING || firstArg.Value != fmt.Sprintf("\"%s\"", funDecl.Name.Name) {
+						pass.Reportf(n.Args[0].Pos(), "Invalid record name, expected \"%s\", found %s", funDecl.Name.Name, firstArg.Value)
+						return true
+					}
+					secondArgX, ok := secondArg.X.(*ast.Ident)
+					if !ok {
+						pass.Reportf(n.Args[1].Pos(), "Invalid initial state for record, expected \"audit.Fail\", found \"%v\"", secondArg.X)
+						return true
+					}
+					if secondArgX.Name != "audit" || secondArg.Sel.Name != "Fail" {
+						pass.Reportf(n.Args[1].Pos(), "Invalid initial state for record, expected \"audit.Fail\", found \"%s.%s\"", secondArgX.Name, secondArg.Sel.Name)
+						return true
 					}
 				}
 			}
 			return true
 		})
-	}
+		if !initializationFound {
+			pass.Reportf(funDecl.Pos(), "Expected audit log in this function, but not found, please add the audit logs or add the \"%s\" function to the white list", funDecl.Name.Name)
+		} else {
+			if !logCallFound {
+				pass.Reportf(funDecl.Pos(), "Expected LogAuditRec or LogAuditRecWithLevel call, but not found")
+			}
+			if !successCallFound {
+				pass.Reportf(funDecl.Pos(), "Expected Success call, but not found")
+			}
+		}
+		return
+	})
 	return nil, nil
-}
-
-func isApiHandler(funDecl *ast.FuncDecl) bool {
-	funcType := funDecl.Type
-	if len(funcType.Params.List) < 3 {
-		return false
-	}
-	arg0Type, ok := funcType.Params.List[0].Type.(*ast.StarExpr)
-	if !ok {
-		return false
-	}
-	arg0X, ok := arg0Type.X.(*ast.Ident)
-	if !ok {
-		return false
-	}
-	if arg0X.Name != "Context" {
-		return false
-	}
-
-	arg1Type, ok := funcType.Params.List[1].Type.(*ast.SelectorExpr)
-	if !ok {
-		return false
-	}
-	arg1X, ok := arg1Type.X.(*ast.Ident)
-	if !ok {
-		return false
-	}
-	if arg1X.Name != "http" || arg1Type.Sel.Name != "ResponseWriter" {
-		return false
-	}
-
-	arg2Type, ok := funcType.Params.List[2].Type.(*ast.StarExpr)
-	if !ok {
-		return false
-	}
-	arg2X, ok := arg2Type.X.(*ast.SelectorExpr)
-	if !ok {
-		return false
-	}
-	arg2XX, ok := arg2X.X.(*ast.Ident)
-	if !ok {
-		return false
-	}
-
-	if arg2XX.Name != "http" || arg2X.Sel.Name != "Request" {
-		return false
-	}
-	return true
 }
