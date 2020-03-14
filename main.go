@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/mattermost/mattermost-govet/apiAuditLogs"
 	"github.com/mattermost/mattermost-govet/equalLenAsserts"
 	"github.com/mattermost/mattermost-govet/inconsistentReceiverName"
 	"github.com/mattermost/mattermost-govet/license"
@@ -18,5 +19,6 @@ func main() {
 		tFatal.Analyzer,
 		equalLenAsserts.Analyzer,
 		inconsistentReceiverName.Analyzer,
+		apiAuditLogs.Analyzer,
 	)
 }
