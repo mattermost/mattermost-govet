@@ -220,20 +220,19 @@ func run(pass *analysis.Pass) (interface{}, error) {
 					return true
 				}
 
-				ident, ok := fun.X.(*ast.Ident)
+				instanceType, ok := pass.TypesInfo.Types[fun.X]
 				if !ok {
 					return true
 				}
 
-				// must have a auditRec.Success()
-				if ident.Name == "auditRec" && fun.Sel.Name == "Success" {
+				if instanceType.Type.String() == "*github.com/mattermost/mattermost-server/v5/audit.Record" && fun.Sel.Name == "Success" {
 					successCallFound = true
 				}
-				if ident.Name == "c" && (fun.Sel.Name == "LogAuditRec" || fun.Sel.Name == "LogAuditRecWithLevel") {
+				if instanceType.Type.String() == "*github.com/mattermost/mattermost-server/v5/web.Context" && (fun.Sel.Name == "LogAuditRec" || fun.Sel.Name == "LogAuditRecWithLevel") {
 					logCallFound = true
 				}
 
-				if ident.Name == "c" && fun.Sel.Name == "MakeAuditRecord" {
+				if instanceType.Type.String() == "*github.com/mattermost/mattermost-server/v5/web.Context" && fun.Sel.Name == "MakeAuditRecord" {
 					initializationFound = true
 					firstArg, ok := n.Args[0].(*ast.BasicLit)
 					if !ok {
@@ -264,13 +263,13 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		})
 		if !initializationFound {
 			pass.Reportf(funDecl.Pos(), "Expected audit log in this function, but not found, please add the audit logs or add the \"%s\" function to the white list", funDecl.Name.Name)
-		} else {
-			if !logCallFound {
-				pass.Reportf(funDecl.Pos(), "Expected LogAuditRec or LogAuditRecWithLevel call, but not found")
-			}
-			if !successCallFound {
-				pass.Reportf(funDecl.Pos(), "Expected Success call, but not found")
-			}
+			return
+		}
+		if !logCallFound {
+			pass.Reportf(funDecl.Pos(), "Expected LogAuditRec or LogAuditRecWithLevel call, but not found")
+		}
+		if !successCallFound {
+			pass.Reportf(funDecl.Pos(), "Expected Success call, but not found")
 		}
 		return
 	})
