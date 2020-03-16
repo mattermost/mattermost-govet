@@ -4,10 +4,10 @@
 package apiAuditLogs
 
 import (
-	"fmt"
 	"go/ast"
 	"go/token"
 	"go/types"
+	"strconv"
 	"strings"
 
 	"github.com/mattermost/mattermost-govet/facts"
@@ -16,174 +16,17 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 )
 
+const mattermostPackagePath = "github.com/mattermost/mattermost-server/v5/"
+
 var Analyzer = &analysis.Analyzer{
 	Name:     "apiAuditLogs",
-	Doc:      "check the audit logs usage in the API",
+	Doc:      "check that audit records are properly created in the API layer.",
 	Requires: []*analysis.Analyzer{inspect.Analyzer, facts.ApiHandlerFacts},
 	Run:      run,
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
-	whiteList := map[string]bool{
-		"autocompleteChannelsForTeam":          true,
-		"autocompleteChannelsForTeamForSearch": true,
-		"autocompleteEmojis":                   true,
-		"autocompleteUsers":                    true,
-		"channelMembersMinusGroupMembers":      true,
-		"checkUserMfa":                         true,
-		"connectWebSocket":                     true,
-		"createEphemeralPost":                  true,
-		"deleteReaction":                       true,
-		"doPostAction":                         true,
-		"getAllChannels":                       true,
-		"getAllTeams":                          true,
-		"getAnalytics":                         true,
-		"getAuthorizedOAuthApps":               true,
-		"getBot":                               true,
-		"getBotIconImage":                      true,
-		"getBots":                              true,
-		"getBrandImage":                        true,
-		"getBulkReactions":                     true,
-		"getChannel":                           true,
-		"getChannelByName":                     true,
-		"getChannelByNameForTeamName":          true,
-		"getChannelMember":                     true,
-		"getChannelMembers":                    true,
-		"getChannelMembersByIds":               true,
-		"getChannelMembersForUser":             true,
-		"getChannelMembersTimezones":           true,
-		"getChannelModerations":                true,
-		"getChannelsForScheme":                 true,
-		"getChannelsForTeamForUser":            true,
-		"getChannelStats":                      true,
-		"getChannelUnread":                     true,
-		"getClientConfig":                      true,
-		"getClientLicense":                     true,
-		"getClusterStatus":                     true,
-		"getCommand":                           true,
-		"getConfig":                            true,
-		"getDefaultProfileImage":               true,
-		"getDeletedChannelsForTeam":            true,
-		"getEmoji":                             true,
-		"getEmojiByName":                       true,
-		"getEmojiImage":                        true,
-		"getEmojiList":                         true,
-		"getEnvironmentConfig":                 true,
-		"getFile":                              true,
-		"getFileInfo":                          true,
-		"getFileInfosForPost":                  true,
-		"getFileLink":                          true,
-		"getFilePreview":                       true,
-		"getFileThumbnail":                     true,
-		"getFlaggedPostsForUser":               true,
-		"getGroup":                             true,
-		"getGroupMembers":                      true,
-		"getGroups":                            true,
-		"getGroupsByChannel":                   true,
-		"getGroupsByTeam":                      true,
-		"getGroupSyncable":                     true,
-		"getGroupSyncables":                    true,
-		"getImage":                             true,
-		"getIncomingHooks":                     true,
-		"getInviteInfo":                        true,
-		"getJob":                               true,
-		"getJobs":                              true,
-		"getJobsByType":                        true,
-		"getLatestTermsOfService":              true,
-		"getLdapGroups":                        true,
-		"getMarketplacePlugins":                true,
-		"getOAuthApp":                          true,
-		"getOAuthAppInfo":                      true,
-		"getOAuthApps":                         true,
-		"getOpenGraphMetadata":                 true,
-		"getOutgoingHooks":                     true,
-		"getPinnedPosts":                       true,
-		"getPlugins":                           true,
-		"getPluginStatuses":                    true,
-		"getPolicy":                            true,
-		"getPost":                              true,
-		"getPostsForChannel":                   true,
-		"getPostsForChannelAroundLastUnread":   true,
-		"getPostThread":                        true,
-		"getPreferenceByCategoryAndName":       true,
-		"getPreferences":                       true,
-		"getPreferencesByCategory":             true,
-		"getProfileImage":                      true,
-		"getPublicChannelsByIdsForTeam":        true,
-		"getPublicChannelsForTeam":             true,
-		"getReactions":                         true,
-		"getRedirectLocation":                  true,
-		"getRole":                              true,
-		"getRoleByName":                        true,
-		"getRolesByNames":                      true,
-		"getSamlCertificateStatus":             true,
-		"getSamlMetadata":                      true,
-		"getSamlMetadataFromIdp":               true,
-		"getScheme":                            true,
-		"getSchemes":                           true,
-		"getServerBusyExpires":                 true,
-		"getSessions":                          true,
-		"getSupportedTimezones":                true,
-		"getSystemPing":                        true,
-		"getTeam":                              true,
-		"getTeamByName":                        true,
-		"getTeamIcon":                          true,
-		"getTeamMember":                        true,
-		"getTeamMembers":                       true,
-		"getTeamMembersByIds":                  true,
-		"getTeamMembersForUser":                true,
-		"getTeamsForScheme":                    true,
-		"getTeamsForUser":                      true,
-		"getTeamStats":                         true,
-		"getTeamsUnreadForUser":                true,
-		"getTeamUnread":                        true,
-		"getTotalUsersStats":                   true,
-		"getUser":                              true,
-		"getUserAccessToken":                   true,
-		"getUserAccessTokens":                  true,
-		"getUserAccessTokensForUser":           true,
-		"getUserByEmail":                       true,
-		"getUserByUsername":                    true,
-		"getUsers":                             true,
-		"getUsersByGroupChannelIds":            true,
-		"getUsersByIds":                        true,
-		"getUsersByNames":                      true,
-		"getUserStatus":                        true,
-		"getUserStatusesByIds":                 true,
-		"getUserTermsOfService":                true,
-		"getWebappPlugins":                     true,
-		"listAutocompleteCommands":             true,
-		"listCommands":                         true,
-		"openDialog":                           true,
-		"patchChannelModerations":              true,
-		"pinPost":                              true,
-		"pushNotificationAck":                  true,
-		"saveReaction":                         true,
-		"searchAllChannels":                    true,
-		"searchArchivedChannelsForTeam":        true,
-		"searchChannelsForTeam":                true,
-		"searchEmojis":                         true,
-		"searchGroupChannels":                  true,
-		"searchPosts":                          true,
-		"searchTeams":                          true,
-		"searchUserAccessTokens":               true,
-		"searchUsers":                          true,
-		"setPostUnread":                        true,
-		"submitDialog":                         true,
-		"teamExists":                           true,
-		"teamMembersMinusGroupMembers":         true,
-		"testElasticsearch":                    true,
-		"testEmail":                            true,
-		"testLdap":                             true,
-		"testS3":                               true,
-		"testSiteURL":                          true,
-		"unpinPost":                            true,
-		"updateUserStatus":                     true,
-		"uploadFileStream":                     true,
-		"viewChannel":                          true,
-	}
-
-	if pass.Pkg.Path() != "github.com/mattermost/mattermost-server/v5/api4" {
+	if pass.Pkg.Path() != mattermostPackagePath+"api4" {
 		return nil, nil
 	}
 
@@ -194,20 +37,20 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	inspect.Preorder(nodeFilter, func(n ast.Node) {
 		funDecl := n.(*ast.FuncDecl)
 
-		if strings.HasSuffix(pass.Fset.File(n.Pos()).Name(), "_test.go") {
+		filename := pass.Fset.File(n.Pos()).Name()
+		if strings.HasSuffix(filename, "_test.go") || strings.HasSuffix(filename, "apitestlib.go") {
 			return
 		}
-		if strings.HasSuffix(pass.Fset.File(n.Pos()).Name(), "apitestlib.go") {
+
+		if whiteList[funDecl.Name.Name] {
 			return
 		}
+
 		if obj, ok := pass.TypesInfo.Defs[funDecl.Name].(*types.Func); ok {
 			var fact facts.IsApiHandler
 			if !pass.ImportObjectFact(obj, &fact) {
 				return
 			}
-		}
-		if whiteList[funDecl.Name.Name] {
-			return
 		}
 		initializationFound := false
 		logCallFound := false
@@ -225,36 +68,56 @@ func run(pass *analysis.Pass) (interface{}, error) {
 					return true
 				}
 
-				if instanceType.Type.String() == "*github.com/mattermost/mattermost-server/v5/audit.Record" && fun.Sel.Name == "Success" {
+				if instanceType.Type.String() == "*"+mattermostPackagePath+"audit.Record" && fun.Sel.Name == "Success" {
 					successCallFound = true
 				}
-				if instanceType.Type.String() == "*github.com/mattermost/mattermost-server/v5/web.Context" && (fun.Sel.Name == "LogAuditRec" || fun.Sel.Name == "LogAuditRecWithLevel") {
+				if instanceType.Type.String() == "*"+mattermostPackagePath+"web.Context" && (fun.Sel.Name == "LogAuditRec" || fun.Sel.Name == "LogAuditRecWithLevel") {
 					logCallFound = true
 				}
 
-				if instanceType.Type.String() == "*github.com/mattermost/mattermost-server/v5/web.Context" && fun.Sel.Name == "MakeAuditRecord" {
+				if instanceType.Type.String() == "*"+mattermostPackagePath+"web.Context" && fun.Sel.Name == "MakeAuditRecord" {
 					initializationFound = true
-					firstArg, ok := n.Args[0].(*ast.BasicLit)
+					if len(n.Args) < 2 {
+						pass.Reportf(n.Pos(), "Invalid record initialization, expected at least 2 parameters")
+						return true
+					}
+
+					arg0, ok := n.Args[0].(*ast.BasicLit)
 					if !ok {
 						pass.Reportf(n.Args[0].Pos(), "Invalid record name, expected \"%s\", found \"%v\"", funDecl.Name.Name, n.Args[0])
 						return true
 					}
-					secondArg, ok := n.Args[1].(*ast.SelectorExpr)
+
+					arg1, ok := n.Args[1].(*ast.SelectorExpr)
 					if !ok {
 						pass.Reportf(n.Args[1].Pos(), "Invalid initial state for record, expected \"audit.Fail\", found \"%v\"", n.Args[1])
 						return true
 					}
-					if firstArg.Kind != token.STRING || firstArg.Value != fmt.Sprintf("\"%s\"", funDecl.Name.Name) {
-						pass.Reportf(n.Args[0].Pos(), "Invalid record name, expected \"%s\", found %s", funDecl.Name.Name, firstArg.Value)
+
+					if arg0.Kind != token.STRING {
+						pass.Reportf(n.Args[0].Pos(), "Invalid record name, expected \"%s\", found \"%v\"", funDecl.Name.Name, arg0)
 						return true
 					}
-					secondArgX, ok := secondArg.X.(*ast.Ident)
+
+					arg0Val, err := strconv.Unquote(arg0.Value)
+					if err != nil {
+						pass.Reportf(n.Args[0].Pos(), "Invalid record name, expected \"%s\", found \"%v\"", funDecl.Name.Name, arg0.Value)
+						return true
+					}
+
+					if arg0Val != funDecl.Name.Name {
+						pass.Reportf(n.Args[0].Pos(), "Invalid record name, expected \"%s\", found \"%s\"", funDecl.Name.Name, arg0Val)
+						return true
+					}
+
+					arg1X, ok := arg1.X.(*ast.Ident)
 					if !ok {
-						pass.Reportf(n.Args[1].Pos(), "Invalid initial state for record, expected \"audit.Fail\", found \"%v\"", secondArg.X)
+						pass.Reportf(n.Args[1].Pos(), "Invalid initial state for record, expected \"audit.Fail\", found \"%v\"", arg1.X)
 						return true
 					}
-					if secondArgX.Name != "audit" || secondArg.Sel.Name != "Fail" {
-						pass.Reportf(n.Args[1].Pos(), "Invalid initial state for record, expected \"audit.Fail\", found \"%s.%s\"", secondArgX.Name, secondArg.Sel.Name)
+
+					if arg1X.Name != "audit" || arg1.Sel.Name != "Fail" {
+						pass.Reportf(n.Args[1].Pos(), "Invalid initial state for record, expected \"audit.Fail\", found \"%s.%s\"", arg1X.Name, arg1.Sel.Name)
 						return true
 					}
 				}
