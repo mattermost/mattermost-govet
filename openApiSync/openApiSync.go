@@ -10,6 +10,7 @@ import (
 	"go/printer"
 	"go/token"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -19,29 +20,62 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-var Analyzer = &analysis.Analyzer{
-	Name: "openApiSync",
-	Doc:  "check for inconsistencies between OpenAPI spec and the source code",
-	Run:  run,
-}
+var (
+	Analyzer = &analysis.Analyzer{
+		Name: "openApiSync",
+		Doc:  "check for inconsistencies between OpenAPI spec and the source code",
+		Run:  run,
+	}
 
-var specFile string
+	specFile         string
+	groupSplitRegexp = regexp.MustCompile(`{([a-z_]*):([a-z_]*)\|([a-z_]*)}`)
+	IgnoredCases     = []string{"websocket:websocket"}
+)
 
 func init() {
 	Analyzer.Flags.StringVar(&specFile, "spec", "", "Path to the OpenAPI 3 YAML spec file")
 }
 
+// formatNode converts AST node to string
 func formatNode(fset *token.FileSet, node interface{}) string {
 	var typeNameBuf bytes.Buffer
 	printer.Fprint(&typeNameBuf, fset, node)
 	return typeNameBuf.String()
 }
 
-func processRouterInit(pass *analysis.Pass, name string, routerPrefixes map[string]string, swagger *openapi3.Swagger, cm *fuzzy.Model) {
+// stringInSlice checks presence of a string in a slice
+func stringInSlice(str string, slice []string) bool {
+	for _, s := range slice {
+		if s == str {
+			return true
+		}
+	}
+	return false
+}
+
+// cleanRegexp removes parts of URL path regexp to be compatible with OpenAPI paths
+func cleanRegexp(s string) string {
+	return strings.Replace(s, ":[A-Za-z0-9]+", "", -1)
+}
+
+// splitHandlerByGroup checks if URL path regexp contains named groups, and splits them in separate paths to be compatible with OpenAPI paths
+func splitHandlerByGroup(str string) []string {
+	matches := groupSplitRegexp.FindAllStringSubmatch(str, -1)
+	if len(matches) != 1 {
+		return []string{str}
+	}
+	group := matches[0][0]
+	part1 := matches[0][2]
+	part2 := matches[0][3]
+	return []string{strings.Replace(str, group, part1, 1), strings.Replace(str, group, part2, 1)}
+}
+
+// processRouterInit checks that all Init functions defined in `names` are properly documented
+func processRouterInit(pass *analysis.Pass, names []string, routerPrefixes map[string]string, swagger *openapi3.Swagger, cm *fuzzy.Model) {
 	for _, file := range pass.Files {
 		ast.Inspect(file, func(n ast.Node) bool {
 			decl, ok := n.(*ast.FuncDecl)
-			if !ok || decl.Name.Name != name {
+			if !ok || !stringInSlice(decl.Name.Name, names) {
 				return true
 			}
 			for _, stmt := range decl.Body.List {
@@ -56,28 +90,22 @@ func processRouterInit(pass *analysis.Pass, name string, routerPrefixes map[stri
 				prefix, _ := strconv.Unquote(aexpr.Args[0].(*ast.BasicLit).Value)
 				method, _ := strconv.Unquote(expr.X.(*ast.CallExpr).Args[0].(*ast.BasicLit).Value)
 				name := aexpr.Fun.(*ast.SelectorExpr).X.(*ast.SelectorExpr).Sel.Name
-				prefix = strings.Replace(prefix, ":[A-Za-z0-9]+", "", -1)
-				routerPrefix := strings.Replace(routerPrefixes[name], ":[A-Za-z0-9]+", "", -1)
-				handler := routerPrefix + prefix
-				// TODO: make this more generic
-				if strings.Contains(handler, "websocket:websocket") { // ignore special cases
+				handler := cleanRegexp(routerPrefixes[name]) + cleanRegexp(prefix)
+				if stringInSlice(handler, IgnoredCases) { // ignore special cases
 					continue
 				}
-				if strings.HasPrefix(handler, "api/v4") {
-					handler = handler[7:]
-				}
+				handler = strings.TrimPrefix(handler, "api/v4")
 				if !strings.HasPrefix(handler, "/") {
 					handler = "/" + handler
 				}
-				handlers := []string{handler}
-				// TODO: make this more generic
-				sync_param_group := "{syncable_type:teams|channels}"
-				if strings.Contains(handler, sync_param_group) {
-					handlers = []string{strings.Replace(handler, sync_param_group, "teams", 1), strings.Replace(handler, sync_param_group, "channels", 1)}
-				}
-				for _, h := range handlers {
+				for _, h := range splitHandlerByGroup(handler) {
 					if path := swagger.Paths.Find(h); path == nil {
-						pass.Reportf(aexpr.Pos(), "Cannot find %v method: %v in OpenAPI 3 spec. (maybe you meant: %v)", h, method, cm.Suggestions(h, false))
+						suffix := ""
+						if suggestions := cm.Suggestions(h, false); len(suggestions) > 0 {
+							suffix = fmt.Sprintf(" (maybe you meant: %v)", suggestions)
+						}
+						pass.Reportf(aexpr.Pos(), "Cannot find %v method: %v in OpenAPI 3 spec.%s", h, method, suffix)
+
 					} else if path.GetOperation(method) == nil {
 						pass.Reportf(aexpr.Pos(), "Handler %v is defined with method %s, but in not in the spec", h, method)
 					}
@@ -89,6 +117,7 @@ func processRouterInit(pass *analysis.Pass, name string, routerPrefixes map[stri
 	}
 }
 
+// parseRoutesStruct scans Routes struct for mux.Router fields and scans their comments
 func parseRoutesStruct(pass *analysis.Pass, decl *ast.GenDecl, routerPrefixes map[string]string) {
 	spec, ok := decl.Specs[0].(*ast.TypeSpec)
 	if !ok || spec.Name.String() != "Routes" {
@@ -116,44 +145,47 @@ func parseRoutesStruct(pass *analysis.Pass, decl *ast.GenDecl, routerPrefixes ma
 	}
 }
 
+// parseInitFunction checks a specific Init function for proper documentation of registered API handlers
 func parseInitFunction(pass *analysis.Pass, decl *ast.FuncDecl, routerPrefixes map[string]string, initFunctions []string) []string {
 	for _, stmt := range decl.Body.List {
-		if expr, ok := stmt.(*ast.ExprStmt); ok {
-			if call, ok := expr.X.(*ast.CallExpr); ok {
-				sel := call.Fun.(*ast.SelectorExpr)
-				if sel.X.(*ast.Ident).Name == "api" {
-					initFunctions = append(initFunctions, sel.Sel.Name)
+		switch node := stmt.(type) {
+		case *ast.ExprStmt:
+			call, ok := node.X.(*ast.CallExpr)
+			if !ok {
+				continue
+			}
+			if selector := call.Fun.(*ast.SelectorExpr); selector.X.(*ast.Ident).Name == "api" {
+				initFunctions = append(initFunctions, selector.Sel.Name)
+			}
+		case *ast.AssignStmt:
+			if len(node.Lhs) != 1 || !strings.HasPrefix(formatNode(pass.Fset, node.Lhs[0]), "api.BaseRoutes") {
+				continue
+			}
+			subRouterName := formatNode(pass.Fset, node.Lhs[0])[15:]
+			if subRouterName == "ApiRoot" || subRouterName == "Root" {
+				continue
+			}
+
+			rhs := formatNode(pass.Fset, node.Rhs[0])[15:]
+			router := rhs[:strings.Index(rhs, ".")]
+			path := rhs[strings.Index(rhs, ".")+13 : strings.LastIndex(rhs, ".")-2]
+			prefix := ""
+			switch router {
+			case "ApiRoot":
+				prefix = "api/v4"
+			case "Root":
+				prefix = ""
+			default:
+				if s, ok := routerPrefixes[router]; ok {
+					prefix = s
+				} else {
+					pass.Reportf(node.Rhs[0].Pos(), "cannot find prefix for %s\n", router)
 				}
 			}
-		} else if assgn, ok := stmt.(*ast.AssignStmt); ok {
-			if len(assgn.Lhs) == 1 && strings.HasPrefix(formatNode(pass.Fset, assgn.Lhs[0]), "api.BaseRoutes") {
-				subRouterName := formatNode(pass.Fset, assgn.Lhs[0])[15:]
-				if subRouterName == "ApiRoot" || subRouterName == "Root" {
-					continue
-				}
-				rhs := formatNode(pass.Fset, assgn.Rhs[0])[15:]
-				router := rhs[:strings.Index(rhs, ".")]
-				path := rhs[strings.Index(rhs, ".")+13 : strings.LastIndex(rhs, ".")-2]
-				prefix := ""
-				switch router {
-				case "ApiRoot":
-					prefix = "api/v4"
-				case "Root":
-					prefix = ""
-				default:
-					if s, ok := routerPrefixes[router]; ok {
-						prefix = s
-					} else {
-						pass.Reportf(assgn.Rhs[0].Pos(), "cannot find prefix for %s\n", router)
-
-					}
-				}
-				s := fmt.Sprintf("%v%v", prefix, path)
-				s2 := routerPrefixes[subRouterName]
-				if s2 != s {
-					pass.Reportf(assgn.Rhs[0].Pos(), "PathPrefix doesn't match field comment for field '%s': '%s' vs '%s'\n", subRouterName, s, s2)
-				}
-
+			s := fmt.Sprintf("%v%v", prefix, path)
+			s2 := routerPrefixes[subRouterName]
+			if s2 != s {
+				pass.Reportf(node.Rhs[0].Pos(), "PathPrefix doesn't match field comment for field '%s': '%s' vs '%s'\n", subRouterName, s, s2)
 			}
 		}
 	}
@@ -185,7 +217,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	}
 	swagger, err := openapi3.NewSwaggerLoader().LoadSwaggerFromFile(specFile)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Unable to parse swagger")
+		return nil, errors.Wrapf(err, "Unable to parse spec file. Expected OpenAPI3 format.")
 	}
 
 	initFunctions, routerPrefixes := validateComments(pass)
@@ -197,9 +229,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	model := fuzzy.NewModel()
 	model.Train(swaggerPaths)
 
-	for _, initFunc := range initFunctions {
-		processRouterInit(pass, initFunc, routerPrefixes, swagger, model)
-	}
+	processRouterInit(pass, initFunctions, routerPrefixes, swagger, model)
 
 	return nil, nil
 }

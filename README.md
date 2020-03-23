@@ -11,4 +11,3 @@ This repository contains mattermost-specific go-vet rules that are used to maint
 1. **structuredLogging** - check invalid usage of logging (must use structured logging)
 1. **tFatal** - check invalid usage of t.Fatal assertions (instead of testify methods)
 1. **apiAuditLogs** - check that audit records are properly created in the API layer
-1. **appErrorWhere** - Makes sure `model.AppError` contains proper `where` field. (**currently disabled**)

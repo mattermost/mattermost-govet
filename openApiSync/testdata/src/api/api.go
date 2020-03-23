@@ -5,7 +5,6 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -15,7 +14,8 @@ type Routes struct {
 	Root    *mux.Router // ''
 	ApiRoot *mux.Router // 'api/v4'
 
-	Users *mux.Router // 'api/v4/userzs'
+	Users  *mux.Router // 'api/v4/userzs'
+	Groups *mux.Router // 'api/v4/groups'
 }
 
 type API struct {
@@ -32,11 +32,9 @@ func Init(root *mux.Router) *API {
 	api.BaseRoutes.Root = root
 	api.BaseRoutes.ApiRoot = root.PathPrefix("api/v4").Subrouter()
 
-	api.BaseRoutes.Users = api.BaseRoutes.ApiRoot.PathPrefix("/users").Subrouter() // want "PathPrefix doesn't match field comment for field 'Users': 'api/v4/users' vs 'api/v4/userzs'"
-
+	api.BaseRoutes.Users = api.BaseRoutes.ApiRoot.PathPrefix("/users").Subrouter()   // want "PathPrefix doesn't match field comment for field 'Users': 'api/v4/users' vs 'api/v4/userzs'"
+	api.BaseRoutes.Groups = api.BaseRoutes.ApiRoot.PathPrefix("/gruops").Subrouter() // want "PathPrefix doesn't match field comment for field 'Groups': 'api/v4/gruops' vs 'api/v4/groups'"
 	api.InitUsers()
-
-	fmt.Errorf("") // wzant "result of fmt.Errorf call not used"
 	return api
 }
 
