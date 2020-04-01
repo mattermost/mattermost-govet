@@ -44,9 +44,12 @@ func formatNode(fset *token.FileSet, node interface{}) string {
 }
 
 // stringInSlice checks presence of a string in a slice
-func stringInSlice(str string, slice []string) bool {
+func stringInSlice(str string, slice []string, partial bool) bool {
 	for _, s := range slice {
 		if s == str {
+			return true
+		}
+		if partial && strings.Contains(str, s) {
 			return true
 		}
 	}
@@ -75,7 +78,7 @@ func processRouterInit(pass *analysis.Pass, names []string, routerPrefixes map[s
 	for _, file := range pass.Files {
 		ast.Inspect(file, func(n ast.Node) bool {
 			decl, ok := n.(*ast.FuncDecl)
-			if !ok || !stringInSlice(decl.Name.Name, names) {
+			if !ok || !stringInSlice(decl.Name.Name, names, false) {
 				return true
 			}
 			for _, stmt := range decl.Body.List {
@@ -91,7 +94,7 @@ func processRouterInit(pass *analysis.Pass, names []string, routerPrefixes map[s
 				method, _ := strconv.Unquote(expr.X.(*ast.CallExpr).Args[0].(*ast.BasicLit).Value)
 				name := aexpr.Fun.(*ast.SelectorExpr).X.(*ast.SelectorExpr).Sel.Name
 				handler := cleanRegexp(routerPrefixes[name]) + cleanRegexp(prefix)
-				if stringInSlice(handler, IgnoredCases) { // ignore special cases
+				if stringInSlice(handler, IgnoredCases, true) { // ignore special cases
 					continue
 				}
 				handler = strings.TrimPrefix(handler, "api/v4")
@@ -107,7 +110,7 @@ func processRouterInit(pass *analysis.Pass, names []string, routerPrefixes map[s
 						pass.Reportf(aexpr.Pos(), "Cannot find %v method: %v in OpenAPI 3 spec.%s", h, method, suffix)
 
 					} else if path.GetOperation(method) == nil {
-						pass.Reportf(aexpr.Pos(), "Handler %v is defined with method %s, but in not in the spec", h, method)
+						pass.Reportf(aexpr.Pos(), "Handler %v is defined with method %s, but it's not in the spec", h, method)
 					}
 				}
 			}
@@ -154,7 +157,12 @@ func parseInitFunction(pass *analysis.Pass, decl *ast.FuncDecl, routerPrefixes m
 			if !ok {
 				continue
 			}
-			if selector := call.Fun.(*ast.SelectorExpr); selector.X.(*ast.Ident).Name == "api" {
+			selector, ok := call.Fun.(*ast.SelectorExpr)
+			if !ok {
+				continue
+			}
+			ident, ok := selector.X.(*ast.Ident)
+			if ok && ident.Name == "api" {
 				initFunctions = append(initFunctions, selector.Sel.Name)
 			}
 		case *ast.AssignStmt:
