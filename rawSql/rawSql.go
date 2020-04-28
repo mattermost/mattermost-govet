@@ -44,12 +44,8 @@ func run(pass *analysis.Pass) (interface{}, error) {
 				}
 
 				switch lead := strings.ToLower(words[0]); lead {
-				case "select":
-					pass.Reportf(n.Pos(), "Found leading \"select\" in a string. Creating raw SQL queries is not allowed, please use the squirrel builder instead.")
-				case "insert":
-					pass.Reportf(n.Pos(), "Found leading \"insert\" in a string. Creating raw SQL queries is not allowed, please use the squirrel builder instead.")
-				case "update":
-					pass.Reportf(n.Pos(), "Found leading \"update\" in a string. Creating raw SQL queries is not allowed, please use the squirrel builder instead.")
+				case "select", "insert", "update":
+					pass.Reportf(n.Pos(), "Found leading %q in a string. Creating raw SQL queries is not allowed, please use the squirrel builder instead.", lead)
 				}
 				return false
 			}
