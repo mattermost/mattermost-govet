@@ -5,25 +5,42 @@ package inconsistentReceiverName
 
 import (
 	"go/ast"
+	"strings"
 
 	"golang.org/x/tools/go/analysis"
 )
 
-var Analyzer = &analysis.Analyzer{
-	Name: "inconsistentReceiverName",
-	Doc:  "check for inconsistent receiver names in the methods of a struct",
-	Run:  run,
-}
+var (
+	Analyzer = &analysis.Analyzer{
+		Name: "inconsistentReceiverName",
+		Doc:  "check for inconsistent receiver names in the methods of a struct",
+		Run:  run,
+	}
+	ignoreFilesPattern string
+)
 
 type firstReceiverName = struct {
 	Name string
 	Node ast.Node
 }
 
+func init() {
+	Analyzer.Flags.StringVar(&ignoreFilesPattern, "ignore", "", "Comma separated list of files to ignore")
+}
+
 func run(pass *analysis.Pass) (interface{}, error) {
+	ignoreFiles := strings.Split(ignoreFilesPattern, ",")
+
 	firstReceiverNameForType := make(map[string]firstReceiverName)
 	for _, file := range pass.Files {
 		ast.Inspect(file, func(node ast.Node) bool {
+			if node != nil {
+				f := pass.Fset.File(node.Pos())
+				if isIgnore(f.Name(), ignoreFiles) {
+					return false
+				}
+			}
+
 			switch funDecl := node.(type) {
 			case *ast.FuncDecl:
 				if funDecl.Recv != nil && len(funDecl.Recv.List) > 0 && len(funDecl.Recv.List[0].Names) > 0 {
@@ -67,4 +84,13 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		})
 	}
 	return nil, nil
+}
+
+func isIgnore(file string, ignoreFiles []string) bool {
+	for _, f := range ignoreFiles {
+		if strings.HasSuffix(file, f) {
+			return true
+		}
+	}
+	return false
 }
