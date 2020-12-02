@@ -29,7 +29,7 @@ var (
 
 	specFile         string
 	groupSplitRegexp = regexp.MustCompile(`{([a-z_]*):([a-z_]*)\|([a-z_]*)}`)
-	IgnoredCases     = []string{"websocket:websocket"}
+	IgnoredCases     = []string{"websocket:websocket", "api/v4/remotecluster"}
 )
 
 func init() {
