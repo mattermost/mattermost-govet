@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/mattermost/mattermost-govet/apiAuditLogs"
 	"github.com/mattermost/mattermost-govet/equalLenAsserts"
+	"github.com/mattermost/mattermost-govet/immut"
 	"github.com/mattermost/mattermost-govet/inconsistentReceiverName"
 	"github.com/mattermost/mattermost-govet/license"
 	"github.com/mattermost/mattermost-govet/openApiSync"
@@ -24,5 +25,6 @@ func main() {
 		rawSql.Analyzer,
 		inconsistentReceiverName.Analyzer,
 		apiAuditLogs.Analyzer,
+		immut.Analyzer,
 	)
 }
