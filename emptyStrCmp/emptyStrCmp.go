@@ -29,7 +29,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 				if !ok {
 					return true
 				}
-				if idt.Name == "len" && (n.Op == token.EQL || n.Op == token.NEQ) {
+				if idt.Name == "len" && (n.Op == token.EQL || n.Op == token.NEQ || n.Op == token.GTR) {
 					arg0 := callExpr.Args[0]
 					typ, ok := pass.TypesInfo.Types[arg0]
 					if ok && typ.Type.String() == "string" {
@@ -43,10 +43,11 @@ func run(pass *analysis.Pass) (interface{}, error) {
 								pass.Reportf(callExpr.Pos(), "calling len(s) == 0 where s is string, please use s == \"\" instead")
 							case token.NEQ:
 								pass.Reportf(callExpr.Pos(), "calling len(s) != 0 where s is string, please use s != \"\" instead")
+							case token.GTR:
+								pass.Reportf(callExpr.Pos(), "calling len(s) > 0 where s is string, please use s != \"\" instead")
 							}
 							return false
 						}
-
 					}
 				}
 			}
