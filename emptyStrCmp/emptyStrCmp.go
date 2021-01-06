@@ -30,6 +30,9 @@ func run(pass *analysis.Pass) (interface{}, error) {
 					return true
 				}
 				if idt.Name == "len" && (n.Op == token.EQL || n.Op == token.NEQ || n.Op == token.GTR) {
+					if len(callExpr.Args) < 1 {
+						return true
+					}
 					arg0 := callExpr.Args[0]
 					typ, ok := pass.TypesInfo.Types[arg0]
 					if ok && typ.Type.String() == "string" {
