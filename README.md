@@ -12,3 +12,4 @@ This repository contains mattermost-specific go-vet rules that are used to maint
 1. **tFatal** - check invalid usage of t.Fatal assertions (instead of testify methods)
 1. **apiAuditLogs** - check that audit records are properly created in the API layer
 1. **rawSql** - check invalid usage of raw SQL queries instead of using the squirrel lib
+1. **emptyStrCmp** - check for idiomatic empty string comparisons
