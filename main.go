@@ -11,6 +11,7 @@ import (
 	"github.com/mattermost/mattermost-govet/rawSql"
 	"github.com/mattermost/mattermost-govet/structuredLogging"
 	"github.com/mattermost/mattermost-govet/tFatal"
+	"github.com/mattermost/mattermost-govet/telemetry"
 	"golang.org/x/tools/go/analysis/unitchecker"
 )
 
@@ -28,5 +29,6 @@ func main() {
 		apiAuditLogs.Analyzer,
 		immut.Analyzer,
 		emptyStrCmp.Analyzer,
+		telemetry.Analyzer,
 	)
 }
