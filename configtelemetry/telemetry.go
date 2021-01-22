@@ -18,7 +18,7 @@ var (
 	modelPkgPath     = "github.com/mattermost/mattermost-server/v5/model"
 )
 
-// Analyzer describes telemetry status analysis function for a config setting
+// Analyzer reports config fields where telemetry is not sent
 var Analyzer = &analysis.Analyzer{
 	Name: "configtelemetry",
 	Doc:  "reports config fields where telemetry is not sent (unless it is specifically indicated  that no telemetry will be sent for that field)",
