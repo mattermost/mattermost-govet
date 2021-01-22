@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-package telemetry
+package configtelemetry
 
 import (
 	"errors"
@@ -13,15 +13,15 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-const (
+var (
 	telemetryPkgPath = "github.com/mattermost/mattermost-server/v5/services/telemetry"
 	modelPkgPath     = "github.com/mattermost/mattermost-server/v5/model"
 )
 
 // Analyzer describes telemetry status analysis function for a config setting
 var Analyzer = &analysis.Analyzer{
-	Name: "telemetry",
-	Doc:  "reports if a config field is not used in services/telemetry package",
+	Name: "configtelemetry",
+	Doc:  "reports config fields where telemetry is not sent (unless it is specifically indicated  that no telemetry will be sent for that field)",
 	Run:  run,
 }
 
@@ -84,7 +84,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 
 	// report remaining fields from the map
 	for k, v := range configMap {
-		pass.Reportf(v, "%s is not used in telemetry\n", k)
+		pass.Reportf(v, "%s is not used in telemetry", k)
 	}
 
 	return nil, nil

@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/mattermost/mattermost-govet/apiAuditLogs"
+	"github.com/mattermost/mattermost-govet/configtelemetry"
 	"github.com/mattermost/mattermost-govet/emptyStrCmp"
 	"github.com/mattermost/mattermost-govet/equalLenAsserts"
 	"github.com/mattermost/mattermost-govet/immut"
@@ -11,7 +12,6 @@ import (
 	"github.com/mattermost/mattermost-govet/rawSql"
 	"github.com/mattermost/mattermost-govet/structuredLogging"
 	"github.com/mattermost/mattermost-govet/tFatal"
-	"github.com/mattermost/mattermost-govet/telemetry"
 	"golang.org/x/tools/go/analysis/unitchecker"
 )
 
@@ -29,6 +29,6 @@ func main() {
 		apiAuditLogs.Analyzer,
 		immut.Analyzer,
 		emptyStrCmp.Analyzer,
-		telemetry.Analyzer,
+		configtelemetry.Analyzer,
 	)
 }
