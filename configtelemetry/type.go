@@ -4,38 +4,30 @@
 package configtelemetry
 
 import (
-	"fmt"
 	"go/ast"
-	"go/parser"
 	"go/token"
-	"go/types"
 	"strings"
 )
 
 var ignoreComments = []string{
 	"telemetry: none",
-	"This field is deprecated and must not be used.",
+	"Deprecated: do not use",
 }
 
-// typeFieldMap will generate map of it's all possible selectors and adds them as a key. The value
+// typeFieldMap will generate map of its all possible selectors and adds them as a key. The value
 // is the position of the declaration in the type spec.
-func typeFieldMap(fset *token.FileSet, obj *types.TypeName) (map[string]token.Pos, error) {
-	srcFile := fset.PositionFor(obj.Pos(), false).Filename
-	fileNode, err := parser.ParseFile(fset, srcFile, nil, parser.AllErrors|parser.ParseComments)
-	if err != nil {
-		return nil, fmt.Errorf("could parse %s: %w", srcFile, err)
-	}
+func typeFieldMap(file *ast.File, typeName string) (map[string]token.Pos, error) {
 
-	var fieldsMap = make(map[string]token.Pos)
+	var fieldsMap map[string]token.Pos
 
-	ast.Inspect(fileNode, func(n ast.Node) bool {
+	ast.Inspect(file, func(n ast.Node) bool {
 		decl, ok := n.(*ast.GenDecl)
-		if !ok || decl.Tok != token.TYPE {
+		if !ok || decl.Tok != token.TYPE || len(decl.Specs) < 1 {
 			return true
 		}
 
 		spec, ok := decl.Specs[0].(*ast.TypeSpec)
-		if !ok || spec.Name.Name != obj.Name() {
+		if !ok || spec.Name.Name != typeName {
 			return true
 		}
 
@@ -56,10 +48,6 @@ func fields(str *ast.StructType) map[string]token.Pos {
 	structFields := make(map[string]token.Pos)
 
 	for _, field := range str.Fields.List {
-		if len(field.Names) != 1 {
-			panic("unhandled struct field definition")
-		}
-
 		if field.Comment != nil && ignored(field.Comment) {
 			continue
 		}
@@ -67,6 +55,10 @@ func fields(str *ast.StructType) map[string]token.Pos {
 		expr := field.Type
 		if ptr, ok := field.Type.(*ast.StarExpr); ok {
 			expr = ptr.X
+		}
+
+		if len(field.Names) != 1 {
+			panic("unhandled struct field definition")
 		}
 
 		key := field.Names[0].Name
