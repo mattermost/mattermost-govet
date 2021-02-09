@@ -51,6 +51,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 						if fun.Sel.Name == check.AssertionName {
 							if typeAndValue, ok := pass.TypesInfo.Types[callExpr.Args[1]]; ok && typeAndValue.Type.String() == check.ForbiddenTypeName {
 								pass.Reportf(callExpr.Pos(), "calling %s.%s on %s, please use %s.%s instead", idnt.Name, check.AssertionName, check.ForbiddenTypeName, idnt.Name, check.ExpectedAssertion)
+								return false
 							}
 						}
 					}
