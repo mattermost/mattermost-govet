@@ -10,7 +10,7 @@ import (
 )
 
 var Analyzer = &analysis.Analyzer{
-	Name: "errorAssertoins",
+	Name: "errorAssertions",
 	Doc:  "check for (require/assert).Nil/NotNil(t, error)",
 	Run:  run,
 }
