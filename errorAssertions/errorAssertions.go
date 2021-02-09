@@ -9,6 +9,10 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
+const (
+	appErrorString = "*github.com/mattermost/mattermost-server/v5/model.AppError"
+)
+
 var Analyzer = &analysis.Analyzer{
 	Name: "errorAssertions",
 	Doc:  "check for (require/assert).Nil/NotNil(t, error)",
@@ -16,6 +20,17 @@ var Analyzer = &analysis.Analyzer{
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
+	checks := []struct {
+		AssertionName     string
+		ForbiddenTypeName string
+		ExpectedAssertion string
+	}{
+		{"Nil", "error", "NoError"},
+		{"NotNil", "error", "Error"},
+		{"Error", appErrorString, "NotNil"},
+		{"NoError", appErrorString, "Nil"},
+	}
+
 	for _, file := range pass.Files {
 		ast.Inspect(file, func(node ast.Node) bool {
 			switch x := node.(type) {
@@ -26,32 +41,18 @@ func run(pass *analysis.Pass) (interface{}, error) {
 					return true
 				}
 
-				module, ok := fun.X.(*ast.Ident)
+				idnt, ok := fun.X.(*ast.Ident)
 				if !ok {
 					return true
 				}
 
-				if fun.Sel.Name == "Nil" && (module.Name == "require" || module.Name == "assert") && len(callExpr.Args) > 1 {
-					if typeAndValue, ok := pass.TypesInfo.Types[callExpr.Args[1]]; ok && typeAndValue.Type.String() == "error" {
-						pass.Reportf(callExpr.Pos(), "calling require/assert.Nil on a regular error, please use require/assert.NoError instead")
-					}
-				}
-
-				if fun.Sel.Name == "NotNil" && (module.Name == "require" || module.Name == "assert") && len(callExpr.Args) > 1 {
-					if typeAndValue, ok := pass.TypesInfo.Types[callExpr.Args[1]]; ok && typeAndValue.Type.String() == "error" {
-						pass.Reportf(callExpr.Pos(), "calling require/assert.NotNil on a regular error, please use require/assert.Error instead")
-					}
-				}
-
-				if fun.Sel.Name == "Error" && (module.Name == "require" || module.Name == "assert") && len(callExpr.Args) > 1 {
-					if typeAndValue, ok := pass.TypesInfo.Types[callExpr.Args[1]]; ok && typeAndValue.Type.String() == "*github.com/mattermost/mattermost-server/v5/model.AppError" {
-						pass.Reportf(callExpr.Pos(), "calling require/assert.Error on a AppError, please use require/assert.NotNil instead")
-					}
-				}
-
-				if fun.Sel.Name == "NoError" && (module.Name == "require" || module.Name == "assert") && len(callExpr.Args) > 1 {
-					if typeAndValue, ok := pass.TypesInfo.Types[callExpr.Args[1]]; ok && typeAndValue.Type.String() == "*github.com/mattermost/mattermost-server/v5/model.AppError" {
-						pass.Reportf(callExpr.Pos(), "calling require/assert.NoError on a AppError, please use require/assert.Nil instead")
+				if (idnt.Name == "require" || idnt.Name == "assert") && len(callExpr.Args) > 1 {
+					for _, check := range checks {
+						if fun.Sel.Name == check.AssertionName {
+							if typeAndValue, ok := pass.TypesInfo.Types[callExpr.Args[1]]; ok && typeAndValue.Type.String() == check.ForbiddenTypeName {
+								pass.Reportf(callExpr.Pos(), "calling %s.%s on %s, please use %s.%s instead", idnt.Name, check.AssertionName, check.ForbiddenTypeName, idnt.Name, check.ExpectedAssertion)
+							}
+						}
 					}
 				}
 
