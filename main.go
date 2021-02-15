@@ -5,6 +5,7 @@ import (
 	"github.com/mattermost/mattermost-govet/configtelemetry"
 	"github.com/mattermost/mattermost-govet/emptyStrCmp"
 	"github.com/mattermost/mattermost-govet/equalLenAsserts"
+	"github.com/mattermost/mattermost-govet/errorAssertions"
 	"github.com/mattermost/mattermost-govet/immut"
 	"github.com/mattermost/mattermost-govet/inconsistentReceiverName"
 	"github.com/mattermost/mattermost-govet/license"
@@ -30,5 +31,6 @@ func main() {
 		immut.Analyzer,
 		emptyStrCmp.Analyzer,
 		configtelemetry.Analyzer,
+		errorAssertions.Analyzer,
 	)
 }
