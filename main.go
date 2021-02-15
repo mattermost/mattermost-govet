@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/mattermost/mattermost-govet/apiAuditLogs"
+	"github.com/mattermost/mattermost-govet/configtelemetry"
 	"github.com/mattermost/mattermost-govet/emptyStrCmp"
 	"github.com/mattermost/mattermost-govet/equalLenAsserts"
 	"github.com/mattermost/mattermost-govet/errorAssertions"
@@ -29,6 +30,7 @@ func main() {
 		apiAuditLogs.Analyzer,
 		immut.Analyzer,
 		emptyStrCmp.Analyzer,
+		configtelemetry.Analyzer,
 		errorAssertions.Analyzer,
 	)
 }
