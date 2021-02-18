@@ -6,6 +6,7 @@ package emptyStrCmp
 import (
 	"go/ast"
 	"go/token"
+	"strings"
 
 	"golang.org/x/tools/go/analysis"
 )
@@ -17,10 +18,10 @@ var Analyzer = &analysis.Analyzer{
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
-	const bindataHeader = "(@generated)"
+	const bindataHeader = "by go-bindata DO NOT EDIT. (@generated)"
 
 	for _, file := range pass.Files {
-		if strings.Contains(file.Comments[0].List[0].Text, bindataHeader) {
+		if strings.HasSuffix(file.Comments[0].List[0].Text, bindataHeader) {
 			continue
 		}
 
