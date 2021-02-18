@@ -17,7 +17,13 @@ var Analyzer = &analysis.Analyzer{
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
+	const bindataHeader = "(@generated)"
+
 	for _, file := range pass.Files {
+		if strings.Contains(file.Comments[0].List[0].Text, bindataHeader) {
+			continue
+		}
+
 		ast.Inspect(file, func(node ast.Node) bool {
 			switch n := node.(type) {
 			case *ast.BinaryExpr:
