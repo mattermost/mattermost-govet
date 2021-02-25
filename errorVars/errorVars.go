@@ -16,7 +16,7 @@ const (
 
 var Analyzer = &analysis.Analyzer{
 	Name: "errorVars",
-	Doc:  "check for non valid type assignations to err and appErr prefixed variables",
+	Doc:  "check for non valid type assignments to err and appErr prefixed variables",
 	Run:  run,
 }
 
