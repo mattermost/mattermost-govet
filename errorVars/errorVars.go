@@ -28,6 +28,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 				for idx, lhsExpr := range x.Lhs {
 					if typeAndValue, ok := pass.TypesInfo.Types[lhsExpr]; ok && typeAndValue.Type.String() == "error" {
 						if len(x.Rhs) == 1 {
+							// This is needed to extract the type name string a multi-value return type
 							if typeAndValue, ok := pass.TypesInfo.Types[x.Rhs[0]]; ok {
 								returnTypes := strings.Split(strings.Trim(typeAndValue.Type.String(), "()"), ", ")
 								if len(returnTypes) > idx && returnTypes[idx] == appErrorString {
