@@ -34,6 +34,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 					if strings.HasPrefix(idnt.Name, "err") {
 						if len(x.Rhs) == 1 {
 							if typeAndValue, ok := pass.TypesInfo.Types[x.Rhs[0]]; ok {
+								// This is needed to extract the type name string a multi-value return type
 								returnTypes := strings.Split(strings.Trim(typeAndValue.Type.String(), "()"), ", ")
 								if len(returnTypes) > idx && returnTypes[idx] == appErrorString {
 									pass.Reportf(x.Pos(), "assigning a *model.AppError variable to a `err` prefixed variable, please use `appErr` prefixed variable name instead.")
@@ -47,6 +48,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 					} else if strings.HasPrefix(idnt.Name, "appErr") {
 						if len(x.Rhs) == 1 {
 							if typeAndValue, ok := pass.TypesInfo.Types[x.Rhs[0]]; ok {
+								// This is needed to extract the type name string a multi-value return type
 								returnTypes := strings.Split(strings.Trim(typeAndValue.Type.String(), "()"), ", ")
 								if len(returnTypes) > idx && returnTypes[idx] == "error" {
 									pass.Reportf(x.Pos(), "assigning a error variable to an `appErr` prefixed variable, please use `err` prefixed variable name instead.")
