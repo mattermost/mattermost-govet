@@ -36,12 +36,12 @@ func run(pass *analysis.Pass) (interface{}, error) {
 							if typeAndValue, ok := pass.TypesInfo.Types[x.Rhs[0]]; ok {
 								returnTypes := strings.Split(strings.Trim(typeAndValue.Type.String(), "()"), ", ")
 								if len(returnTypes) > idx && returnTypes[idx] == appErrorString {
-									pass.Reportf(x.Pos(), "assigning a *model.AppError variable to a `err` prefixed variable, please use appErr prefixed variable name instead.")
+									pass.Reportf(x.Pos(), "assigning a *model.AppError variable to a `err` prefixed variable, please use `appErr` prefixed variable name instead.")
 								}
 							}
 						} else if len(x.Rhs) == len(x.Lhs) {
 							if typeAndValue, ok := pass.TypesInfo.Types[x.Rhs[idx]]; ok && typeAndValue.Type.String() == appErrorString {
-								pass.Reportf(x.Pos(), "assigning a *model.AppError variable to a `err` prefixed variable, please use appErr prefixed variable name instead.")
+								pass.Reportf(x.Pos(), "assigning a *model.AppError variable to a `err` prefixed variable, please use `appErr` prefixed variable name instead.")
 							}
 						}
 					} else if strings.HasPrefix(idnt.Name, "appErr") {
@@ -49,12 +49,12 @@ func run(pass *analysis.Pass) (interface{}, error) {
 							if typeAndValue, ok := pass.TypesInfo.Types[x.Rhs[0]]; ok {
 								returnTypes := strings.Split(strings.Trim(typeAndValue.Type.String(), "()"), ", ")
 								if len(returnTypes) > idx && returnTypes[idx] == "error" {
-									pass.Reportf(x.Pos(), "assigning a error variable to an `appErr` prefixed variable, please use err prefixed variable name instead.")
+									pass.Reportf(x.Pos(), "assigning a error variable to an `appErr` prefixed variable, please use `err` prefixed variable name instead.")
 								}
 							}
 						} else if len(x.Rhs) == len(x.Lhs) {
 							if typeAndValue, ok := pass.TypesInfo.Types[x.Rhs[idx]]; ok && typeAndValue.Type.String() == "error" {
-								pass.Reportf(x.Pos(), "assigning a *model.AppError variable to a `err` prefixed variable, please use appErr variable name instead.")
+								pass.Reportf(x.Pos(), "assigning a error variable to an `appErr` prefixed variable, please use `err` prefixed variable name instead.")
 							}
 						}
 					}
