@@ -27,8 +27,12 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	}{
 		{"Nil", "error", "NoError"},
 		{"NotNil", "error", "Error"},
+		{"Nilf", "error", "NoErrorf"},
+		{"NotNilf", "error", "Errorf"},
 		{"Error", appErrorString, "NotNil"},
 		{"NoError", appErrorString, "Nil"},
+		{"Errorf", appErrorString, "NotNilf"},
+		{"NoErrorf", appErrorString, "Nilf"},
 	}
 
 	for _, file := range pass.Files {

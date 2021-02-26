@@ -6,6 +6,7 @@ import (
 	"github.com/mattermost/mattermost-govet/emptyStrCmp"
 	"github.com/mattermost/mattermost-govet/equalLenAsserts"
 	"github.com/mattermost/mattermost-govet/errorAssertions"
+	"github.com/mattermost/mattermost-govet/errorVars"
 	"github.com/mattermost/mattermost-govet/errorVarsName"
 	"github.com/mattermost/mattermost-govet/immut"
 	"github.com/mattermost/mattermost-govet/inconsistentReceiverName"
@@ -34,5 +35,6 @@ func main() {
 		configtelemetry.Analyzer,
 		errorAssertions.Analyzer,
 		errorVarsName.Analyzer,
+		errorVars.Analyzer,
 	)
 }
