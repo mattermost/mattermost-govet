@@ -74,7 +74,7 @@ func splitHandlerByGroup(str string) []string {
 }
 
 // processRouterInit checks that all Init functions defined in `names` are properly documented
-func processRouterInit(pass *analysis.Pass, names []string, routerPrefixes map[string]string, swagger *openapi3.Swagger, cm *fuzzy.Model) {
+func processRouterInit(pass *analysis.Pass, names []string, routerPrefixes map[string]string, swagger *openapi3.T, cm *fuzzy.Model) {
 	for _, file := range pass.Files {
 		ast.Inspect(file, func(n ast.Node) bool {
 			decl, ok := n.(*ast.FuncDecl)
@@ -223,7 +223,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	if _, err := os.Stat(specFile); err != nil {
 		return nil, errors.Wrapf(err, "spec file does not exist")
 	}
-	swagger, err := openapi3.NewSwaggerLoader().LoadSwaggerFromFile(specFile)
+	swagger, err := openapi3.NewLoader().LoadFromFile(specFile)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Unable to parse spec file. Expected OpenAPI3 format.")
 	}
