@@ -134,7 +134,6 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		if !successCallFound {
 			pass.Reportf(funDecl.Pos(), "Expected Success call, but not found")
 		}
-		return
 	})
 	return nil, nil
 }
