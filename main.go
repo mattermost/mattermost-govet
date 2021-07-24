@@ -11,6 +11,7 @@ import (
 	"github.com/mattermost/mattermost-govet/immut"
 	"github.com/mattermost/mattermost-govet/inconsistentReceiverName"
 	"github.com/mattermost/mattermost-govet/license"
+	"github.com/mattermost/mattermost-govet/mutexLock"
 	"github.com/mattermost/mattermost-govet/openApiSync"
 	"github.com/mattermost/mattermost-govet/rawSql"
 	"github.com/mattermost/mattermost-govet/structuredLogging"
@@ -36,5 +37,6 @@ func main() {
 		errorAssertions.Analyzer,
 		errorVarsName.Analyzer,
 		errorVars.Analyzer,
+		mutexLock.Analyzer,
 	)
 }
