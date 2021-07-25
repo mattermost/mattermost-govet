@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-type ExampleContext struct {
+type Context struct {
 	Err *AppError
 }
 
@@ -18,7 +18,7 @@ func iR() *AppError {
 	return &AppError{}
 }
 
-func a(c *ExampleContext, w http.ResponseWriter, r *http.Request) {
+func a(c *Context, w http.ResponseWriter, r *http.Request) {
 	err := iR()
 	if err != nil { // ok
 		c.Err = err
@@ -26,14 +26,14 @@ func a(c *ExampleContext, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func b(c *ExampleContext, w http.ResponseWriter, r *http.Request) {
+func b(c *Context, w http.ResponseWriter, r *http.Request) {
 	err := iR()
 	if err != nil { // not ok
 		c.Err = err
 	}
 }
 
-func c(c *ExampleContext, w http.ResponseWriter, r *http.Request) {
+func c(c *Context, w http.ResponseWriter, r *http.Request) {
 	err := iR()
 	if err != nil { // ok
 		c.Err = err
@@ -47,7 +47,7 @@ func c(c *ExampleContext, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func d(c *ExampleContext, w http.ResponseWriter, r *http.Request) {
+func d(c *Context, w http.ResponseWriter, r *http.Request) {
 	err := iR()
 	if err != nil { // not ok
 		c.Err = err
@@ -59,7 +59,7 @@ func d(c *ExampleContext, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func e(c *ExampleContext, w http.ResponseWriter, r *http.Request) {
+func e(c *Context, w http.ResponseWriter, r *http.Request) {
 	err := iR()
 	t := iR()
 	v := iR()
@@ -92,7 +92,7 @@ func e(c *ExampleContext, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func f(c *ExampleContext, w http.ResponseWriter, r *http.Request) {
+func f(c *Context, w http.ResponseWriter, r *http.Request) {
 	err := iR()
 	t := iR()
 	v := iR()
@@ -120,7 +120,7 @@ func f(c *ExampleContext, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func g(c *ExampleContext, w http.ResponseWriter, r *http.Request) {
+func g(c *Context, w http.ResponseWriter, r *http.Request) {
 	t := true
 	err := iR()
 
@@ -132,7 +132,7 @@ func g(c *ExampleContext, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func h(c *ExampleContext, w http.ResponseWriter, r *http.Request) {
+func h(c *Context, w http.ResponseWriter, r *http.Request) {
 	t := true
 	err := iR()
 
@@ -143,7 +143,7 @@ func h(c *ExampleContext, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func i(c *ExampleContext, w http.ResponseWriter, r *http.Request) {
+func i(c *Context, w http.ResponseWriter, r *http.Request) {
 	err := iR()
 	t := iR()
 
@@ -154,7 +154,7 @@ func i(c *ExampleContext, w http.ResponseWriter, r *http.Request) {
 
 }
 
-func j(c *ExampleContext, w http.ResponseWriter, r *http.Request) {
+func j(c *Context, w http.ResponseWriter, r *http.Request) {
 	err := iR()
 	t := iR()
 
@@ -163,7 +163,7 @@ func j(c *ExampleContext, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func k(c *ExampleContext, w http.ResponseWriter, r *http.Request) {
+func k(c *Context, w http.ResponseWriter, r *http.Request) {
 	err := iR()
 	t := iR()
 
@@ -173,7 +173,7 @@ func k(c *ExampleContext, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func l(c *ExampleContext, w http.ResponseWriter, r *http.Request) {
+func l(c *Context, w http.ResponseWriter, r *http.Request) {
 	err := iR()
 	t := iR()
 
@@ -182,7 +182,7 @@ func l(c *ExampleContext, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func m(c *ExampleContext, w http.ResponseWriter, r *http.Request) {
+func m(c *Context, w http.ResponseWriter, r *http.Request) {
 	err := iR()
 	t := iR()
 
@@ -192,7 +192,7 @@ func m(c *ExampleContext, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func n(c *ExampleContext, w http.ResponseWriter, r *http.Request) {
+func n(c *Context, w http.ResponseWriter, r *http.Request) {
 	err := iR()
 	t := iR()
 
@@ -201,7 +201,7 @@ func n(c *ExampleContext, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func o(c *ExampleContext, w http.ResponseWriter, r *http.Request) {
+func o(c *Context, w http.ResponseWriter, r *http.Request) {
 	err := iR()
 	t := iR()
 	s := true
@@ -212,7 +212,7 @@ func o(c *ExampleContext, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func p(c *ExampleContext, w http.ResponseWriter, r *http.Request) {
+func p(c *Context, w http.ResponseWriter, r *http.Request) {
 	err := iR()
 	t := iR()
 	s := true
@@ -223,7 +223,7 @@ func p(c *ExampleContext, w http.ResponseWriter, r *http.Request) {
 }
 
 // skip appErrReturn check
-func q(c *ExampleContext, w http.ResponseWriter, r *http.Request) {
+func q(c *Context, w http.ResponseWriter, r *http.Request) {
 	err := iR()
 	t := iR()
 	s := true

@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-type ExampleContext struct {
+type Context struct {
 	Err *AppError
 }
 
@@ -18,7 +18,7 @@ func iR() *AppError {
 	return &AppError{}
 }
 
-func a(c *ExampleContext, w http.ResponseWriter, r *http.Request) {
+func a(c *Context, w http.ResponseWriter, r *http.Request) {
 	err := iR()
 	if err != nil {
 		c.Err = err
