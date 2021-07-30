@@ -11,10 +11,10 @@ import (
 	"golang.org/x/tools/go/analysis/passes/inspect"
 )
 
-const mattermostPackagePath = "github.com/mattermost/mattermost-server/v5/"
+const mattermostPackagePath = "github.com/mattermost/mattermost-server/v6/"
 
 var Analyzer = &analysis.Analyzer{
-	Name:     "apiHandlerReturnChecker",
+	Name:     "appErrorReturn",
 	Doc:      "check that when an error occurs in the handlers, we call return. Can also skip checks on api handler by adding 'skip appErrReturn check' to handler function doc",
 	Requires: []*analysis.Analyzer{inspect.Analyzer},
 	Run:      run,
@@ -68,6 +68,68 @@ func checkCond(biE *ast.BinaryExpr) bool {
 
 	s, okXParen := biE.X.(*ast.ParenExpr)
 	t, okYParen := biE.Y.(*ast.ParenExpr)
+
+	_, ghOk := biE.X.(*ast.SelectorExpr)
+	if ghOk {
+		return false
+	}
+
+	_, bhOk := biE.X.(*ast.CallExpr)
+	if bhOk {
+		return false
+	}
+
+	_, shOk := biE.X.(*ast.StarExpr)
+	if shOk {
+		return false
+	}
+
+	_, uhOk := biE.X.(*ast.UnaryExpr)
+	if uhOk {
+		return false
+	}
+
+	_, lithOk := biE.X.(*ast.BasicLit)
+	if lithOk {
+		return false
+	}
+
+	_, inDhOk := biE.X.(*ast.IndexExpr)
+	if inDhOk {
+		return false
+	}
+
+	// Y
+
+	_, ghOY := biE.Y.(*ast.SelectorExpr)
+	if ghOY {
+		return false
+	}
+
+	_, bhOY := biE.Y.(*ast.CallExpr)
+	if bhOY {
+		return false
+	}
+
+	_, shOY := biE.Y.(*ast.StarExpr)
+	if shOY {
+		return false
+	}
+
+	_, uhOY := biE.Y.(*ast.UnaryExpr)
+	if uhOY {
+		return false
+	}
+
+	_, lithOY := biE.Y.(*ast.BasicLit)
+	if lithOY {
+		return false
+	}
+
+	_, inDhOY := biE.Y.(*ast.IndexExpr)
+	if inDhOY {
+		return false
+	}
 
 	if okXIdent && okYIdent {
 		aName := x.Name
