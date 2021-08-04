@@ -13,6 +13,7 @@ import (
 	"github.com/mattermost/mattermost-govet/license"
 	"github.com/mattermost/mattermost-govet/mutexLock"
 	"github.com/mattermost/mattermost-govet/openApiSync"
+	"github.com/mattermost/mattermost-govet/pointerToSlice"
 	"github.com/mattermost/mattermost-govet/rawSql"
 	"github.com/mattermost/mattermost-govet/structuredLogging"
 	"github.com/mattermost/mattermost-govet/tFatal"
@@ -37,6 +38,7 @@ func main() {
 		errorAssertions.Analyzer,
 		errorVarsName.Analyzer,
 		errorVars.Analyzer,
+		pointerToSlice.Analyzer,
 		mutexLock.Analyzer,
 	)
 }
