@@ -10,13 +10,22 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-var Analyzer = &analysis.Analyzer{
-	Name: "pointerToSlice",
-	Doc:  "check for usage of pointer to slice in function definitions",
-	Run:  run,
+var (
+	Analyzer = &analysis.Analyzer{
+		Name: "pointerToSlice",
+		Doc:  "check for usage of pointer to slice in function definitions",
+		Run:  run,
+	}
+	ignoreFilesPattern string
+)
+
+func init() {
+	Analyzer.Flags.StringVar(&ignoreFilesPattern, "ignore", "", "Comma separated list of files to ignore")
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
+	ignoreFiles := strings.Split(ignoreFilesPattern, ",")
+
 	checkNode := func(expr ast.Expr) {
 		sexpr, ok := expr.(*ast.StarExpr)
 		if !ok {
@@ -36,6 +45,13 @@ func run(pass *analysis.Pass) (interface{}, error) {
 
 	for _, file := range pass.Files {
 		ast.Inspect(file, func(node ast.Node) bool {
+			if node != nil {
+				f := pass.Fset.File(node.Pos())
+				if isIgnore(f.Name(), ignoreFiles) {
+					return false
+				}
+			}
+
 			f, ok := node.(*ast.FuncDecl)
 			if !ok || f.Type == nil {
 				return true
@@ -58,4 +74,13 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	}
 
 	return nil, nil
+}
+
+func isIgnore(file string, ignoreFiles []string) bool {
+	for _, f := range ignoreFiles {
+		if strings.HasSuffix(file, f) {
+			return true
+		}
+	}
+	return false
 }
