@@ -24,7 +24,10 @@ func init() {
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
-	ignoreFiles := strings.Split(ignoreFilesPattern, ",")
+	var ignoreFiles []string
+	if ignoreFilesPattern != "" {
+		ignoreFiles = strings.Split(ignoreFilesPattern, ",")
+	}
 
 	checkNode := func(expr ast.Expr) {
 		sexpr, ok := expr.(*ast.StarExpr)

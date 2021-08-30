@@ -29,7 +29,10 @@ func init() {
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
-	ignoreFiles := strings.Split(ignoreFilesPattern, ",")
+	var ignoreFiles []string
+	if ignoreFilesPattern != "" {
+		ignoreFiles = strings.Split(ignoreFilesPattern, ",")
+	}
 
 	firstReceiverNameForType := make(map[string]firstReceiverName)
 	for _, file := range pass.Files {
