@@ -16,7 +16,7 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 )
 
-const mattermostPackagePath = "github.com/mattermost/mattermost-server/v5/"
+const mattermostPackagePath = "github.com/mattermost/mattermost-server/v6/"
 
 var Analyzer = &analysis.Analyzer{
 	Name:     "apiAuditLogs",
