@@ -1,5 +1,7 @@
 ## Mattermost Go Vet
 
+*DO NOT USE THIS BRANCH*. All commits should go to the `new` branch.
+
 This repository contains mattermost-specific go-vet rules that are used to maintain code consistency in `mattermost-server`.
 
 ## Included analyzers
