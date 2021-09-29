@@ -1,0 +1,48 @@
+version: 2.1
+
+jobs:
+
+  check-golangci-lint:
+    docker:
+      - image: golangci/golangci-lint:v1.42.1
+    steps:
+      - checkout
+      - run:
+          command: make golangci-lint
+
+  build:
+    docker:
+      - image: docker.io/goreleaser/goreleaser:v0.181.1@sha256:caeb27477927c5e563b5c776987c968afe69110caf6e714ae33afc3a1162f039
+    steps:
+      - checkout
+      - run:
+          name: Run snapshot
+          command: make snapshot
+
+  test:
+    docker:
+      - image: cimg/go:1.17-node
+    working_directory: ~/mattermost-govet
+    steps:
+      - checkout
+      - run:
+          name: Checkout mattermost-api-reference
+          command: |
+            pushd ../
+            git clone --depth=1 https://github.com/mattermost/mattermost-api-reference.git
+            pushd mattermost-api-reference
+            make build
+            popd
+            popd
+      - run:
+          name: Run tests
+          command: |
+            make test
+
+workflows:
+  version: 2
+  ci:
+    jobs:
+      - check-golangci-lint
+      - test
+      - build
