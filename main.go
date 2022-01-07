@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/mattermost/mattermost-govet/appErrorReturn"
 	"github.com/mattermost/mattermost-govet/v2/apiAuditLogs"
+	"github.com/mattermost/mattermost-govet/v2/appErrorReturn"
 	"github.com/mattermost/mattermost-govet/v2/configtelemetry"
 	"github.com/mattermost/mattermost-govet/v2/emptyStrCmp"
 	"github.com/mattermost/mattermost-govet/v2/equalLenAsserts"
