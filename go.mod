@@ -1,4 +1,4 @@
-module github.com/mattermost/mattermost-govet
+module github.com/mattermost/mattermost-govet/v2
 
 go 1.13
 

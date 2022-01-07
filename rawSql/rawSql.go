@@ -12,7 +12,7 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-const sqlstorePackagePath = "github.com/mattermost/mattermost-server/v5/store/sqlstore"
+const sqlstorePackagePath = "github.com/mattermost/mattermost-server/v6/store/sqlstore"
 
 var Analyzer = &analysis.Analyzer{
 	Name: "rawSql",

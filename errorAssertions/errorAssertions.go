@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	appErrorString = "*github.com/mattermost/mattermost-server/v5/model.AppError"
+	appErrorString = "*github.com/mattermost/mattermost-server/v6/model.AppError"
 )
 
 var Analyzer = &analysis.Analyzer{

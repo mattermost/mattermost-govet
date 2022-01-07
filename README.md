@@ -14,3 +14,5 @@ This repository contains mattermost-specific go-vet rules that are used to maint
 1. **rawSql** - check invalid usage of raw SQL queries instead of using the squirrel lib
 1. **emptyStrCmp** - check for idiomatic empty string comparisons
 1. **appErrorReturn** - check that when an error occurs in the handlers, we call return. Can also skip checks on api handler by adding 'skip appErrReturn check' to handler function doc
+1. **pointerToSlice** - check for usage of pointer to slice in function definitions
+1. **mutexLock** - check for cases where a mutex is left locked before returning
