@@ -12,6 +12,7 @@ import (
 	"github.com/mattermost/mattermost-govet/inconsistentReceiverName"
 	"github.com/mattermost/mattermost-govet/license"
 	"github.com/mattermost/mattermost-govet/mutexLock"
+	"github.com/mattermost/mattermost-govet/nilErrors"
 	"github.com/mattermost/mattermost-govet/openApiSync"
 	"github.com/mattermost/mattermost-govet/pointerToSlice"
 	"github.com/mattermost/mattermost-govet/rawSql"
@@ -40,5 +41,6 @@ func main() {
 		errorVars.Analyzer,
 		pointerToSlice.Analyzer,
 		mutexLock.Analyzer,
+		nilErrors.Analyzer2,
 	)
 }
