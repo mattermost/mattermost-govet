@@ -41,6 +41,6 @@ func main() {
 		errorVars.Analyzer,
 		pointerToSlice.Analyzer,
 		mutexLock.Analyzer,
-		nilErrors.Analyzer2,
+		nilErrors.Analyzer,
 	)
 }

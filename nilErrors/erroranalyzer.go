@@ -6,18 +6,21 @@ package nilErrors
 import (
 	"go/ast"
 	"go/token"
+	"go/types"
 	"strings"
 
 	"golang.org/x/tools/go/analysis"
 )
 
-var Analyzer2 = &analysis.Analyzer{
+var errType = types.Universe.Lookup("error").Type().Underlying().(*types.Interface)
+
+var Analyzer = &analysis.Analyzer{
 	Name: "nilErrors",
 	Doc:  "finds nil error dereferences",
-	Run:  run2,
+	Run:  run,
 }
 
-func run2(pass *analysis.Pass) (interface{}, error) {
+func run(pass *analysis.Pass) (interface{}, error) {
 	for _, file := range pass.Files {
 		ast.Inspect(file, func(node ast.Node) bool {
 			switch x := node.(type) {
@@ -33,9 +36,11 @@ func run2(pass *analysis.Pass) (interface{}, error) {
 				if !ok {
 					return false
 				}
-				if obj, ok := pass.TypesInfo.Defs[xIdent]; ok && obj.Type().String() != "error" {
+
+				if obj, ok := pass.TypesInfo.Defs[xIdent]; ok && obj.Type().Underlying().(*types.Interface) != errType {
 					return false
 				}
+
 				identifiers := map[string]bool{
 					xIdent.Name: true,
 				}
@@ -68,7 +73,7 @@ func errorChecked(pass *analysis.Pass, body *ast.BlockStmt, objects map[string]b
 				return true
 			}
 
-			if strings.Contains(xIdent.Name, "log") || xIdent.Name == "t" {
+			if strings.Contains(xIdent.Name, "log") || xIdent.Name == "t" || xIdent.Name == "http" {
 				return false
 			}
 
