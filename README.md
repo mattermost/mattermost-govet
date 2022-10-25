@@ -15,3 +15,4 @@ This repository contains mattermost-specific go-vet rules that are used to maint
 1. **emptyStrCmp** - check for idiomatic empty string comparisons
 1. **pointerToSlice** - check for usage of pointer to slice in function definitions
 1. **mutexLock** - check for cases where a mutex is left locked before returning
+1. **wrapError** - check for original errors being passed as details rather then wrapped

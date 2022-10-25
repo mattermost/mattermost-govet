@@ -1,3 +1,6 @@
+// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 package main
 
 import (
@@ -17,6 +20,7 @@ import (
 	"github.com/mattermost/mattermost-govet/v2/rawSql"
 	"github.com/mattermost/mattermost-govet/v2/structuredLogging"
 	"github.com/mattermost/mattermost-govet/v2/tFatal"
+	"github.com/mattermost/mattermost-govet/v2/wraperrors"
 	"golang.org/x/tools/go/analysis/unitchecker"
 )
 
@@ -40,5 +44,6 @@ func main() {
 		errorVars.Analyzer,
 		pointerToSlice.Analyzer,
 		mutexLock.Analyzer,
+		wraperrors.Analyzer,
 	)
 }
