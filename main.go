@@ -6,6 +6,7 @@ package main
 import (
 	"github.com/mattermost/mattermost-govet/v2/apiAuditLogs"
 	"github.com/mattermost/mattermost-govet/v2/configtelemetry"
+	"github.com/mattermost/mattermost-govet/v2/emptyInterface"
 	"github.com/mattermost/mattermost-govet/v2/emptyStrCmp"
 	"github.com/mattermost/mattermost-govet/v2/equalLenAsserts"
 	"github.com/mattermost/mattermost-govet/v2/errorAssertions"
@@ -37,6 +38,7 @@ func main() {
 		inconsistentReceiverName.Analyzer,
 		apiAuditLogs.Analyzer,
 		immut.Analyzer,
+		emptyInterface.Analyzer,
 		emptyStrCmp.Analyzer,
 		configtelemetry.Analyzer,
 		errorAssertions.Analyzer,
