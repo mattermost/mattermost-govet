@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/mattermost/mattermost-govet/apiAuditLogs"
 	"github.com/mattermost/mattermost-govet/configtelemetry"
+	"github.com/mattermost/mattermost-govet/emptyInterface"
 	"github.com/mattermost/mattermost-govet/emptyStrCmp"
 	"github.com/mattermost/mattermost-govet/equalLenAsserts"
 	"github.com/mattermost/mattermost-govet/errorAssertions"
@@ -40,5 +41,6 @@ func main() {
 		errorVars.Analyzer,
 		pointerToSlice.Analyzer,
 		mutexLock.Analyzer,
+		emptyInterface.Analyzer,
 	)
 }
