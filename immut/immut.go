@@ -147,17 +147,12 @@ func parseDirectives(pass *analysis.Pass) {
 							continue
 						}
 						named := tname.Type().(*types.Named)
-						found := false
 						for n, i := named.NumMethods(), 0; i < n; i++ {
 							if meth := named.Method(i); meth.Name() == methName {
-								found = true
 								debugf("mark %s as constructor", meth)
 								pass.ExportObjectFact(meth, &isConstructor{})
 								break
 							}
-						}
-						if !found {
-							// TODO(dh): flag malformed comment
 						}
 					default:
 						pass.Reportf(c.Pos(), "malformed //immut:constructor directive: expected 'FuncName' or 'Type.MethodName'")

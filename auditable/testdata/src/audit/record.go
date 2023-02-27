@@ -8,9 +8,7 @@ type Record struct {
 	EventName string                 `json:"event_name"`
 	Status    string                 `json:"status"`
 	EventData EventData              `json:"event"`
-	Actor     EventActor             `json:"actor"`
 	Meta      map[string]interface{} `json:"meta"`
-	Error     EventError             `json:"error,omitempty"`
 }
 
 // EventData contains all event specific data about the modified entity
@@ -19,26 +17,6 @@ type EventData struct {
 	PriorState  map[string]interface{} `json:"prior_state"`     // Prior state of the object being modified, nil if no prior state
 	ResultState map[string]interface{} `json:"resulting_state"` // Resulting object after creating or modifying it
 	ObjectType  string                 `json:"object_type"`     // String representation of the object type. eg. "post"
-}
-
-// EventActor is the subject triggering the event
-type EventActor struct {
-	UserId    string `json:"user_id"`
-	SessionId string `json:"session_id"`
-	Client    string `json:"client"`
-	IpAddress string `json:"ip_address"`
-}
-
-// EventMeta is a key-value store to store related information to the event that is not directly related to the modified entity
-type EventMeta struct {
-	ApiPath   string `json:"api_path"`
-	ClusterId string `json:"cluster_id"`
-}
-
-// EventError contains error information in case of failure of the event
-type EventError struct {
-	Description string `json:"description,omitempty"`
-	Code        int    `json:"status_code,omitempty"`
 }
 
 // Auditable for sensitive object classes, consider implementing Auditable and include whatever the
@@ -71,11 +49,6 @@ func (rec *Record) AddEventParameter(key string, val interface{}) {
 	}
 }
 
-// AddEventPriorState adds the prior state of the modified object to the audit record
-func (rec *Record) AddEventPriorState(object Auditable) {
-	rec.EventData.PriorState = object.Auditable()
-}
-
 // AddEventResultState adds the result state of the modified object to the audit record
 func (rec *Record) AddEventResultState(object Auditable) {
 	rec.EventData.ResultState = object.Auditable()
@@ -84,20 +57,4 @@ func (rec *Record) AddEventResultState(object Auditable) {
 // AddEventObjectType adds the object type of the modified object to the audit record
 func (rec *Record) AddEventObjectType(objectType string) {
 	rec.EventData.ObjectType = objectType
-}
-
-// AddMeta adds a key/value entry to the audit record that can be used for related information not directly related to
-// the modified object, e.g. authentication method
-func (rec *Record) AddMeta(name string, val interface{}) {
-	rec.Meta[name] = val
-}
-
-// AddErrorCode adds the error code for a failed event to the audit record
-func (rec *Record) AddErrorCode(code int) {
-	rec.Error.Code = code
-}
-
-// AddErrorDesc adds the error description for a failed event to the audit record
-func (rec *Record) AddErrorDesc(description string) {
-	rec.Error.Description = description
 }
