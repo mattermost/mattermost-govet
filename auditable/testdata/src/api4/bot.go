@@ -21,9 +21,34 @@ func createBot(c *Context, w http.ResponseWriter, r *http.Request) {
 	bot := &model.Bot{}
 	bot.Patch(botPatch)
 
+	botValue := model.Bot{}
+	botPatchValue := model.BotPatch{}
+
+	botSlice := []*model.Bot{}
+	botPatchSlice := []*model.BotPatch{}
+
+	slice := []string{"a", "b", "c"}
+
+	botMap := map[string]*model.Bot{}
+	botPatchMap := map[string]*model.BotPatch{}
+
+	props := map[string]any{}
+
 	auditRec := c.MakeAuditRecord("createBot", audit.Fail)
 	defer c.LogAuditRec(auditRec)
 	auditRec.AddEventParameter("bot", bot)
+	auditRec.AddEventParameter("patch", botPatch) // want `model.BotPatch is not auditable, but it is added to the audit record`
+	auditRec.AddEventParameter("bot value", botValue)
+	auditRec.AddEventParameter("patch value", botPatchValue) // want `model.BotPatch is not auditable, but it is added to the audit record`
+	auditRec.AddEventParameter("smth", "something else")
+	auditRec.AddEventParameter("bot slice", botSlice)
+	auditRec.AddEventParameter("bot patch slice", botPatchSlice) // want `model.BotPatch is not auditable, but it is added to the audit record`
+	auditRec.AddEventParameter("bot map", botMap)
+	auditRec.AddEventParameter("bot patch map", botPatchMap) // want `model.BotPatch is not auditable, but it is added to the audit record`
+	auditRec.AddEventParameter("string interface", props)    // want `is not auditable, but it is added to the audit record`
+	auditRec.AddEventParameter("slice", slice)
+	other := "other"
+	auditRec.AddEventParameter("other", other)
 
 	auditRec.Success()
 	auditRec.AddEventObjectType("bot")

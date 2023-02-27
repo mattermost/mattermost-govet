@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/mattermost/mattermost-govet/apiAuditLogs"
+	"github.com/mattermost/mattermost-govet/auditable"
 	"github.com/mattermost/mattermost-govet/configtelemetry"
 	"github.com/mattermost/mattermost-govet/emptyInterface"
 	"github.com/mattermost/mattermost-govet/emptyStrCmp"
@@ -42,5 +43,6 @@ func main() {
 		pointerToSlice.Analyzer,
 		mutexLock.Analyzer,
 		emptyInterface.Analyzer,
+		auditable.Analyzer,
 	)
 }
