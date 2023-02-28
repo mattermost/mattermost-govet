@@ -44,8 +44,9 @@ func createBot(c *Context, w http.ResponseWriter, r *http.Request) {
 	auditRec.AddEventParameter("bot slice", botSlice)
 	auditRec.AddEventParameter("bot patch slice", botPatchSlice) // want `model.BotPatch is not auditable, but it is added to the audit record`
 	auditRec.AddEventParameter("bot map", botMap)
-	auditRec.AddEventParameter("bot patch map", botPatchMap) // want `model.BotPatch is not auditable, but it is added to the audit record`
-	auditRec.AddEventParameter("string interface", props)    // want `is not auditable, but it is added to the audit record`
+	auditRec.AddEventParameter("bot patch map", botPatchMap)      // want `model.BotPatch is not auditable, but it is added to the audit record`
+	auditRec.AddEventParameter("string interface", props)         // want `is not auditable, but it is added to the audit record`
+	auditRec.AddEventParameter("string interface ignore ", props) // auditable:ignore
 	auditRec.AddEventParameter("slice", slice)
 	other := "other"
 	auditRec.AddEventParameter("other", other)

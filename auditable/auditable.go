@@ -6,7 +6,9 @@ package auditable
 import (
 	"fmt"
 	"go/ast"
+	"go/token"
 	"go/types"
+	"strings"
 
 	"golang.org/x/tools/go/analysis"
 )
@@ -27,6 +29,11 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	}
 
 	for _, file := range pass.Files {
+		commentMap := make(map[token.Pos]*ast.CommentGroup)
+		for i := range file.Comments {
+			commentMap[file.Comments[i].Pos()] = file.Comments[i]
+		}
+
 		ast.Inspect(file, func(n ast.Node) bool {
 			expr, ok := n.(*ast.CallExpr)
 			if !ok {
@@ -58,6 +65,14 @@ func run(pass *analysis.Pass) (interface{}, error) {
 			typ, ok := pass.TypesInfo.Types[param]
 			if !ok {
 				return false
+			}
+
+			// we check for the comment next to the whole expression, so we need to add 1 to the end position
+			// if we find a comment with the auditable:ignore tag, we skip the check for this node
+			if comment, ok := commentMap[expr.End()+1]; ok {
+				if strings.Contains(comment.Text(), "auditable:ignore") {
+					return false
+				}
 			}
 
 			if auditable, err := isAuditable(typ.Type); err == nil && !auditable {
@@ -94,6 +109,7 @@ func isAuditable(typ types.Type) (bool, error) {
 		return false, fmt.Errorf("unexpected type %T", v)
 	}
 
+	// check if the type implements the Auditable interface
 	for i := 0; i < nt.NumMethods(); i++ {
 		if nt.Method(i).Name() == "Auditable" && nt.Method(i).Type().(*types.Signature).String() == "func() map[string]interface{}" {
 			return true, nil
