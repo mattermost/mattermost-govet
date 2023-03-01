@@ -14,10 +14,22 @@ import (
 
 var (
 	apiPackagePath = "github.com/mattermost/mattermost-server/v6/api4"
-	methodsToCheck = map[string]tester{"AddEventParameter": isAuditable}
+	methodsToCheck = map[string]tester{"AddEventParameter": {
+		fn:            isAuditable,
+		vetMsg:        "%s is not auditable, but it is added to the audit record",
+		errorMsg:      "error checking if %s is auditable: %v",
+		ignoreComment: "auditable:ignore",
+		name:          "auditable",
+	}}
 )
 
-type tester func(types.Type) (bool, error)
+type tester struct {
+	fn            func(types.Type) (bool, error)
+	vetMsg        string
+	errorMsg      string
+	ignoreComment string
+	name          string
+}
 
 var Analyzer = &analysis.Analyzer{
 	Name: "auditable",
@@ -31,21 +43,24 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	}
 
 	for _, file := range pass.Files {
-		commentMap := make(map[int]struct{})
-		for i := range file.Comments {
-			// ignore comments may change if we look for different type of interfaces
-			// for now we only have auditable:ignore, but we may have more in the future
-			// so we can add required logic into methodsToCheck map. For now, keeping this simple.
-			if !strings.Contains(file.Comments[i].Text(), "auditable:ignore") {
-				continue
-			}
+		commentMap := make(map[string]map[int]struct{})
+		for tester := range methodsToCheck {
+			commentMap[tester] = make(map[int]struct{})
+		}
 
-			// since go/ast parse comments out of the node tree, it's tricky to get a comment
-			// after an expression. You'll need to guess how many columns the comment is away
-			// so we take a naive approach and just get the line number of the comment so that
-			// we can check if it's the next line of the expression end position.
-			line := pass.Fset.PositionFor(file.Comments[i].Pos(), false).Line
-			commentMap[line] = struct{}{}
+		for method, tester := range methodsToCheck {
+			for i := range file.Comments {
+				if !strings.Contains(file.Comments[i].Text(), tester.ignoreComment) {
+					continue
+				}
+
+				// since go/ast parse comments out of the node tree, it's tricky to get a comment
+				// after an expression. You'll need to guess how many columns the comment is away
+				// so we take a naive approach and just get the line number of the comment so that
+				// we can check if it's the next line of the expression end position.
+				line := pass.Fset.PositionFor(file.Comments[i].Pos(), false).Line
+				commentMap[method][line] = struct{}{}
+			}
 		}
 
 		ast.Inspect(file, func(n ast.Node) bool {
@@ -67,7 +82,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 				return true
 			}
 
-			for method, testFn := range methodsToCheck {
+			for method, tester := range methodsToCheck {
 				if fn.Sel.Name != method {
 					continue
 				}
@@ -89,16 +104,14 @@ func run(pass *analysis.Pass) (interface{}, error) {
 				exprLine := pass.Fset.PositionFor(expr.End(), false).Line
 				// we check for the comment next to the whole expression, so we need to add 1 to the end position
 				// if we find a comment with the auditable:ignore tag, we skip the check for this node.
-				if _, ok := commentMap[exprLine]; ok {
+				if _, ok := commentMap[method][exprLine]; ok {
 					return false
 				}
 
-				if auditable, err := testFn(typ.Type); err == nil && !auditable {
-					// the error message should be constructed in a way that it can be used by multiple testers if we need to.
-					// probably we'll need to add that in the map of methodsToCheck as well.
-					pass.Reportf(param.Pos(), "%s is not auditable, but it is added to the audit record", typ.Type.String())
+				if auditable, err := tester.fn(typ.Type); err == nil && !auditable {
+					pass.Reportf(param.Pos(), tester.vetMsg, typ.Type.String())
 				} else if err != nil {
-					pass.Reportf(param.Pos(), "error checking if %s is auditable: %v", typ.Type.String(), err)
+					pass.Reportf(param.Pos(), tester.errorMsg, typ.Type.String(), err)
 				}
 			}
 
