@@ -19,7 +19,6 @@ var (
 		vetMsg:        "%s is not auditable, but it is added to the audit record",
 		errorMsg:      "error checking if %s is auditable: %v",
 		ignoreComment: "auditable:ignore",
-		name:          "auditable",
 	}}
 )
 
@@ -28,7 +27,6 @@ type tester struct {
 	vetMsg        string
 	errorMsg      string
 	ignoreComment string
-	name          string
 }
 
 var Analyzer = &analysis.Analyzer{
