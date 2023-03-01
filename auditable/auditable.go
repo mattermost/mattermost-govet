@@ -6,7 +6,6 @@ package auditable
 import (
 	"fmt"
 	"go/ast"
-	"go/token"
 	"go/types"
 	"strings"
 
@@ -15,7 +14,10 @@ import (
 
 var (
 	apiPackagePath = "github.com/mattermost/mattermost-server/v6/api4"
+	methodsToCheck = map[string]tester{"AddEventParameter": isAuditable}
 )
+
+type tester func(types.Type) (bool, error)
 
 var Analyzer = &analysis.Analyzer{
 	Name: "auditable",
@@ -29,9 +31,21 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	}
 
 	for _, file := range pass.Files {
-		commentMap := make(map[token.Pos]*ast.CommentGroup)
+		commentMap := make(map[int]struct{})
 		for i := range file.Comments {
-			commentMap[file.Comments[i].Pos()] = file.Comments[i]
+			// ignore comments may change if we look for different type of interfaces
+			// for now we only have auditable:ignore, but we may have more in the future
+			// so we can add required logic into methodsToCheck map. For now, keeping this simple.
+			if !strings.Contains(file.Comments[i].Text(), "auditable:ignore") {
+				continue
+			}
+
+			// since go/ast parse comments out of the node tree, it's tricky to get a comment
+			// after an expression. You'll need to guess how many columns the comment is away
+			// so we take a naive approach and just get the line number of the comment so that
+			// we can check if it's the next line of the expression end position.
+			line := pass.Fset.PositionFor(file.Comments[i].Pos(), false).Line
+			commentMap[line] = struct{}{}
 		}
 
 		ast.Inspect(file, func(n ast.Node) bool {
@@ -49,36 +63,43 @@ func run(pass *analysis.Pass) (interface{}, error) {
 				return true
 			}
 
-			if fn.Sel != nil && fn.Sel.Name != "AddEventParameter" {
+			if fn.Sel == nil {
 				return true
 			}
 
-			if len(expr.Args) < 2 {
-				return false
-			}
+			for method, testFn := range methodsToCheck {
+				if fn.Sel.Name != method {
+					continue
+				}
 
-			param, ok := expr.Args[1].(*ast.Ident)
-			if !ok {
-				return false
-			}
-
-			typ, ok := pass.TypesInfo.Types[param]
-			if !ok {
-				return false
-			}
-
-			// we check for the comment next to the whole expression, so we need to add 1 to the end position
-			// if we find a comment with the auditable:ignore tag, we skip the check for this node
-			if comment, ok := commentMap[expr.End()+1]; ok {
-				if strings.Contains(comment.Text(), "auditable:ignore") {
+				if len(expr.Args) < 2 {
 					return false
 				}
-			}
 
-			if auditable, err := isAuditable(typ.Type); err == nil && !auditable {
-				pass.Reportf(param.Pos(), "%s is not auditable, but it is added to the audit record", typ.Type.String())
-			} else if err != nil {
-				pass.Reportf(param.Pos(), "error checking if %s is auditable: %v", typ.Type.String(), err)
+				param, ok := expr.Args[1].(*ast.Ident)
+				if !ok {
+					return false
+				}
+
+				typ, ok := pass.TypesInfo.Types[param]
+				if !ok {
+					return false
+				}
+
+				exprLine := pass.Fset.PositionFor(expr.End(), false).Line
+				// we check for the comment next to the whole expression, so we need to add 1 to the end position
+				// if we find a comment with the auditable:ignore tag, we skip the check for this node.
+				if _, ok := commentMap[exprLine]; ok {
+					return false
+				}
+
+				if auditable, err := testFn(typ.Type); err == nil && !auditable {
+					// the error message should be constructed in a way that it can be used by multiple testers if we need to.
+					// probably we'll need to add that in the map of methodsToCheck as well.
+					pass.Reportf(param.Pos(), "%s is not auditable, but it is added to the audit record", typ.Type.String())
+				} else if err != nil {
+					pass.Reportf(param.Pos(), "error checking if %s is auditable: %v", typ.Type.String(), err)
+				}
 			}
 
 			return true
@@ -89,14 +110,20 @@ func run(pass *analysis.Pass) (interface{}, error) {
 }
 
 func isAuditable(typ types.Type) (bool, error) {
-	var nt *types.Named
 	if _, ok := typ.(*types.Basic); ok {
 		return true, nil
 	}
 
+	// this is the common interface that we need to check if the type implements
+	// a method. We need to check for both *types.Interface and *types.Named
+	var mt interface {
+		NumMethods() int
+		Method(int) *types.Func
+	}
+
 	switch v := typ; v.(type) {
 	case *types.Interface:
-		return false, nil
+		mt = v.(*types.Interface)
 	case *types.Map:
 		return isAuditable(v.(*types.Map).Elem())
 	case *types.Slice:
@@ -104,14 +131,14 @@ func isAuditable(typ types.Type) (bool, error) {
 	case *types.Pointer:
 		return isAuditable(v.(*types.Pointer).Elem())
 	case *types.Named:
-		nt = v.(*types.Named)
+		mt = v.(*types.Named)
 	default:
 		return false, fmt.Errorf("unexpected type %T", v)
 	}
 
 	// check if the type implements the Auditable interface
-	for i := 0; i < nt.NumMethods(); i++ {
-		if nt.Method(i).Name() == "Auditable" && nt.Method(i).Type().(*types.Signature).String() == "func() map[string]interface{}" {
+	for i := 0; i < mt.NumMethods(); i++ {
+		if mt.Method(i).Name() == "Auditable" && mt.Method(i).Type().(*types.Signature).String() == "func() map[string]interface{}" {
 			return true, nil
 		}
 	}
