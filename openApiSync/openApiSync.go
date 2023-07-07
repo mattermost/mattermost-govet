@@ -169,7 +169,7 @@ func parseInitFunction(pass *analysis.Pass, decl *ast.FuncDecl, routerPrefixes m
 				continue
 			}
 			subRouterName := formatNode(pass.Fset, node.Lhs[0])[15:]
-			if subRouterName == "ApiRoot" || subRouterName == "Root" {
+			if subRouterName == "APIRoot" || subRouterName == "APIRoot5" || subRouterName == "Root" {
 				continue
 			}
 
@@ -178,7 +178,7 @@ func parseInitFunction(pass *analysis.Pass, decl *ast.FuncDecl, routerPrefixes m
 			path := rhs[strings.Index(rhs, ".")+13 : strings.LastIndex(rhs, ".")-2]
 			prefix := ""
 			switch router {
-			case "ApiRoot":
+			case "APIRoot":
 				prefix = "api/v4"
 			case "Root":
 				prefix = ""
