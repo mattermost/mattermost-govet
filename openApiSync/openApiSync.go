@@ -97,7 +97,6 @@ func processRouterInit(pass *analysis.Pass, names []string, routerPrefixes map[s
 				if stringInSlice(handler, IgnoredCases, true) { // ignore special cases
 					continue
 				}
-				handler = strings.TrimPrefix(handler, "api/v4")
 				if !strings.HasPrefix(handler, "/") {
 					handler = "/" + handler
 				}
