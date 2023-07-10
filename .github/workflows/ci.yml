@@ -1,0 +1,61 @@
+name: CI
+on:
+  push:
+  pull_request:
+
+env:
+    go-version: "1.19.5"
+
+        
+jobs:
+    check-golangci-lint:
+        name: Check golangci-lint
+        runs-on: ubuntu-22.04
+        steps:
+          - name: Checkout mattermost-govet
+            uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+          - name: Setup Go
+            uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
+            with:
+              go-version: ${{ env.go-version }}
+          - name: Run golangci-lint
+            uses: golangci/golangci-lint-action@v3
+            with:
+              version: v1.52.2
+
+    build:
+        name: Build
+        runs-on: ubuntu-22.04
+        steps:
+          - name: Checkout mattermost-govet
+            uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+          - name: Setup Go
+            uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
+          - name: Run GoReleaser
+            uses: goreleaser/goreleaser-action@v4
+            with:
+                args: release --skip-sign --skip-publish --snapshot --rm-dist
+
+    test:
+        name: Run Tests
+        runs-on: ubuntu-22.04
+        steps:
+        - name: Checkout mattermost-govet
+          uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+        - name: Setup Go
+          uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
+          with:
+            go-version: ${{ env.go-version }}
+        - name: Setup Node
+          uses: actions/setup-node@v3
+        - name: Checkout mattermost-api-reference
+          uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+          with:
+              repository: mattermost/mattermost
+              path: mattermost
+        - name: Build
+          run: |
+            pushd mattermost/api
+            make build
+        - name: Run Tests
+          run: make test
