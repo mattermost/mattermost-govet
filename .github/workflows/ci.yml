@@ -1,0 +1,66 @@
+name: CI
+on:
+  push:
+    branches:
+      - new
+  pull_request:
+
+env:
+    go-version: "1.19.5"
+        
+jobs:
+    check-golangci-lint:
+        name: Check golangci-lint
+        runs-on: ubuntu-22.04
+        steps:
+          - name: Checkout mattermost-govet
+            uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+          - name: Setup Go
+            uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
+            with:
+              go-version: ${{ env.go-version }}
+          - name: Run golangci-lint
+            uses: golangci/golangci-lint-action@639cd343e1d3b897ff35927a75193d57cfcba299 # v3.6.0
+            with:
+              version: v1.52.2
+
+    build:
+        name: Build
+        runs-on: ubuntu-22.04
+        steps:
+          - name: Checkout mattermost-govet
+            uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+          - name: Setup Go
+            uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
+          - name: Run GoReleaser
+            uses: goreleaser/goreleaser-action@336e29918d653399e599bfca99fadc1d7ffbc9f7 # v4.3.0
+            with:
+                args: release --skip-sign --skip-publish --snapshot --rm-dist
+
+    test:
+        name: Run Tests
+        runs-on: ubuntu-22.04
+        steps:
+        - name: Checkout mattermost-govet
+          uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+          with:
+            path: mattermost-govet
+        - name: Setup Go
+          uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
+          with:
+            go-version: ${{ env.go-version }}
+        - name: Setup Node
+          uses: actions/setup-node@e33196f7422957bea03ed53f6fbb155025ffc7b8 # v3.7.0
+        - name: Checkout mattermost
+          uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+          with:
+              repository: mattermost/mattermost
+              path: mattermost
+        - name: Build
+          run: |
+            cd mattermost/api
+            make build
+        - name: Run Tests
+          run: |
+            cd mattermost-govet
+            make test
