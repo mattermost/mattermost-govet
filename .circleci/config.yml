@@ -26,11 +26,11 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Checkout mattermost-api-reference
+          name: Checkout mattermost
           command: |
             pushd ../
-            git clone --depth=1 https://github.com/mattermost/mattermost-api-reference.git
-            pushd mattermost-api-reference
+            git clone --depth=1 https://github.com/mattermost/mattermost.git
+            pushd mattermost/api
             make build
             popd
             popd
