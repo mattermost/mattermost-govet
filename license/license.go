@@ -4,8 +4,10 @@
 package license
 
 import (
+	"regexp"
 	"strings"
 
+	"github.com/pkg/errors"
 	"golang.org/x/tools/go/analysis"
 )
 
@@ -37,7 +39,9 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		if pass.Analyzer.Name == "enterpriseLicense" {
 			// Closed source enterprise license
 			licenseLine2 = enterpriseLicenseLine2
-		} else if strings.HasPrefix(pass.Pkg.Path(), "github.com/mattermost/mattermost/server/v8/enterprise") {
+		} else if matched, err := regexp.MatchString("^github.com/mattermost/mattermost/server/v[0-9]+/enterprise", pass.Pkg.Path()); err != nil {
+			return nil, errors.Wrap(err, "failed to test path with regex")
+		} else if matched {
 			// Source available license
 			licenseLine2 = sourceAvailableLicenseLine2
 		}
