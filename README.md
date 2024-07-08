@@ -1,4 +1,4 @@
-## Mattermost Go Vet
+# Mattermost Go Vet
 
 This repository contains mattermost-specific go-vet rules that are used to maintain code consistency in `mattermost-server`.
 
@@ -16,3 +16,26 @@ This repository contains mattermost-specific go-vet rules that are used to maint
 1. **pointerToSlice** - check for usage of pointer to slice in function definitions
 1. **mutexLock** - check for cases where a mutex is left locked before returning
 1. **wrapError** - check for original errors being passed as details rather then wrapped
+
+## Running Locally
+Mattermost Go Vet is designed to run against the `mattermost/mattermost` repo. It assumes that you have the `mattermost/mattermost` and `mattermost/mattermost-govet` in the same top-level directory.
+
+The following can be used to test locally:
+```
+# ENV vars
+MM_ROOT=</path/to/mattermost/>
+MM_GOVET=</path/to/mattermost-govet>
+GOBIN=</path/to/go/bin>
+API_YAML=$MM_ROOT/api/v4/html/static/mattermost-openapi-v4.yaml
+
+# Make OpenAPI file
+if [ ! -f $API_YAML ]; then
+	make -C $MM_ROOT/api build
+fi
+
+# Install
+go install $MM_GOVET
+
+# Run
+go vet -vettool=$GOBIN/mattermost-govet -openApiSync -openApiSync.spec=$API_YAML ./... 2>&1 || true
+```
