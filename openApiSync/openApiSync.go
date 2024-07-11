@@ -9,6 +9,7 @@ import (
 	"go/ast"
 	"go/printer"
 	"go/token"
+	"net/http"
 	"os"
 	"regexp"
 	"strconv"
@@ -91,7 +92,8 @@ func processRouterInit(pass *analysis.Pass, names []string, routerPrefixes map[s
 					continue
 				}
 				prefix, _ := strconv.Unquote(aexpr.Args[0].(*ast.BasicLit).Value)
-				method, _ := strconv.Unquote(expr.X.(*ast.CallExpr).Args[0].(*ast.BasicLit).Value)
+				method := getMethodFromExpr(expr)
+
 				name := aexpr.Fun.(*ast.SelectorExpr).X.(*ast.SelectorExpr).Sel.Name
 				handler := cleanRegexp(routerPrefixes[name]) + cleanRegexp(prefix)
 				if stringInSlice(handler, IgnoredCases, true) { // ignore special cases
@@ -239,4 +241,38 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	processRouterInit(pass, initFunctions, routerPrefixes, swagger, model)
 
 	return nil, nil
+}
+
+func getMethodFromExpr(expr *ast.ExprStmt) string {
+	var method string
+	methodArg := expr.X.(*ast.CallExpr).Args[0]
+
+	if methodSelectorExpr, ok := methodArg.(*ast.SelectorExpr); ok {
+		if methodSelectorExpr.X.(*ast.Ident).Name == "http" {
+			switch methodSelectorExpr.Sel.Name {
+			case "MethodGet":
+				method = http.MethodGet
+			case "MethodHead":
+				method = http.MethodHead
+			case "MethodPost":
+				method = http.MethodPost
+			case "MethodPut":
+				method = http.MethodPut
+			case "MethodPatch":
+				method = http.MethodPatch
+			case "MethodDelete":
+				method = http.MethodDelete
+			case "MethodConnect":
+				method = http.MethodConnect
+			case "MethodOptions":
+				method = http.MethodOptions
+			case "MethodTrace":
+				method = http.MethodTrace
+			}
+		}
+	} else if methodBasicLit, ok := methodArg.(*ast.BasicLit); ok {
+		method, _ = strconv.Unquote(methodBasicLit.Value)
+	}
+
+	return method
 }
