@@ -10,6 +10,16 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
+const (
+	ServerModulePath = "github.com/mattermost/mattermost/server/v8"
+	API4PkgPath      = ServerModulePath + "/channels/api4"
+
+	PublicModulePath = "github.com/mattermost/mattermost/server/public"
+	ModelPkgPath     = PublicModulePath + "/model"
+
+	AppErrType = "*" + ModelPkgPath + ".AppError"
+)
+
 func FunctionName(expr *ast.CallExpr) (string, string, bool) {
 	switch t := expr.Fun.(type) {
 	case *ast.SelectorExpr:

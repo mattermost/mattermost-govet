@@ -7,11 +7,8 @@ import (
 	"go/ast"
 	"strings"
 
+	"github.com/mattermost/mattermost-govet/v2/util"
 	"golang.org/x/tools/go/analysis"
-)
-
-const (
-	appErrorString = "*github.com/mattermost/mattermost-server/v6/model.AppError"
 )
 
 var Analyzer = &analysis.Analyzer{
@@ -31,12 +28,12 @@ func run(pass *analysis.Pass) (interface{}, error) {
 							// This is needed to extract the type name string a multi-value return type
 							if typeAndValue, ok := pass.TypesInfo.Types[x.Rhs[0]]; ok {
 								returnTypes := strings.Split(strings.Trim(typeAndValue.Type.String(), "()"), ", ")
-								if len(returnTypes) > idx && returnTypes[idx] == appErrorString {
+								if len(returnTypes) > idx && returnTypes[idx] == util.AppErrType {
 									pass.Reportf(x.Pos(), "assigning a *model.AppError to a `error` type variable, please create a new variable to store this value.")
 								}
 							}
 						} else if len(x.Rhs) == len(x.Lhs) {
-							if typeAndValue, ok := pass.TypesInfo.Types[x.Rhs[idx]]; ok && typeAndValue.Type.String() == appErrorString {
+							if typeAndValue, ok := pass.TypesInfo.Types[x.Rhs[idx]]; ok && typeAndValue.Type.String() == util.AppErrType {
 								pass.Reportf(x.Pos(), "assigning a *model.AppError to a `error` type variable, please create a new variable to store this value.")
 							}
 						}

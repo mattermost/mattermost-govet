@@ -6,11 +6,12 @@ package errorAssertions
 import (
 	"go/ast"
 
+	"github.com/mattermost/mattermost-govet/v2/util"
 	"golang.org/x/tools/go/analysis"
 )
 
 const (
-	appErrorString = "*github.com/mattermost/mattermost-server/v6/model.AppError"
+	appErrorString = util.AppErrType
 )
 
 var Analyzer = &analysis.Analyzer{
