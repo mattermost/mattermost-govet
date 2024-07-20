@@ -10,8 +10,8 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-const (
-	appErrorString = util.AppErrType
+var (
+	appErrorType = util.AppErrType
 )
 
 var Analyzer = &analysis.Analyzer{
@@ -30,10 +30,10 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		{"NotNil", "error", "Error"},
 		{"Nilf", "error", "NoErrorf"},
 		{"NotNilf", "error", "Errorf"},
-		{"Error", appErrorString, "NotNil"},
-		{"NoError", appErrorString, "Nil"},
-		{"Errorf", appErrorString, "NotNilf"},
-		{"NoErrorf", appErrorString, "Nilf"},
+		{"Error", appErrorType, "NotNil"},
+		{"NoError", appErrorType, "Nil"},
+		{"Errorf", appErrorType, "NotNilf"},
+		{"NoErrorf", appErrorType, "Nilf"},
 	}
 
 	for _, file := range pass.Files {
