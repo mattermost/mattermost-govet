@@ -10,7 +10,7 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-const (
+var (
 	appErrorType = util.AppErrType
 )
 
@@ -54,8 +54,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 				if (idnt.Name == "require" || idnt.Name == "assert") && len(callExpr.Args) > 1 {
 					for _, check := range checks {
 						if fun.Sel.Name == check.AssertionName {
-							typeAndValue, ok := pass.TypesInfo.Types[callExpr.Args[1]]
-							if ok && typeAndValue.Type.String() == check.ForbiddenTypeName {
+							if typeAndValue, ok := pass.TypesInfo.Types[callExpr.Args[1]]; ok && typeAndValue.Type.String() == check.ForbiddenTypeName {
 								pass.Reportf(callExpr.Pos(), "calling %s.%s on %s, please use %s.%s instead", idnt.Name, check.AssertionName, check.ForbiddenTypeName, idnt.Name, check.ExpectedAssertion)
 								return false
 							}

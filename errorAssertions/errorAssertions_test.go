@@ -10,6 +10,7 @@ import (
 )
 
 func Test(t *testing.T) {
+	appErrorType = "*model.AppError"
 	testdata := analysistest.TestData()
-	analysistest.Run(t, testdata, Analyzer)
+	analysistest.Run(t, testdata, Analyzer, "model", "assert", "errorAssertions")
 }
