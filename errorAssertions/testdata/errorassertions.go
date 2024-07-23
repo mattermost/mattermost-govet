@@ -3,9 +3,10 @@ package errorAssertions
 import (
 	"testing"
 
-	"assert"
-	"model"
-	"require"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/mattermost/mattermost/server/public/model"
 )
 
 func TestError(t *testing.T) {
@@ -31,19 +32,19 @@ func TestError(t *testing.T) {
 
 func TestModelAppError(t *testing.T) {
 	var appErr *model.AppError
-	assert.Error(t, appErr)                 // want `calling assert.Error on \*model.AppError, please use assert.NotNil instead`
-	assert.Errorf(t, appErr, "%s", "foo")   // want `calling assert.Errorf on \*model.AppError, please use assert.NotNilf instead`
-	assert.NoError(t, appErr)               // want `calling assert.NoError on \*model.AppError, please use assert.Nil instead`
-	assert.NoErrorf(t, appErr, "%s", "foo") // want `calling assert.NoErrorf on \*model.AppError, please use assert.Nilf instead`
+	assert.Error(t, appErr)                 // want `calling assert.Error on \*github.com/mattermost/mattermost/server/public/model.AppError, please use assert.NotNil instead`
+	assert.Errorf(t, appErr, "%s", "foo")   // want `calling assert.Errorf on \*github.com/mattermost/mattermost/server/public/model.AppError, please use assert.NotNilf instead`
+	assert.NoError(t, appErr)               // want `calling assert.NoError on \*github.com/mattermost/mattermost/server/public/model.AppError, please use assert.Nil instead`
+	assert.NoErrorf(t, appErr, "%s", "foo") // want `calling assert.NoErrorf on \*github.com/mattermost/mattermost/server/public/model.AppError, please use assert.Nilf instead`
 	assert.Nil(t, appErr)
 	assert.Nilf(t, appErr, "%s", "foo")
 	assert.NotNil(t, appErr)
 	assert.NotNilf(t, appErr, "%s", "foo")
 
-	require.Error(t, appErr)                 // want `calling require.Error on \*model.AppError, please use require.NotNil instead`
-	require.Errorf(t, appErr, "%s", "foo")   // want `calling require.Errorf on \*model.AppError, please use require.NotNilf instead`
-	require.NoError(t, appErr)               // want `calling require.NoError on \*model.AppError, please use require.Nil instead`
-	require.NoErrorf(t, appErr, "%s", "foo") // want `calling require.NoErrorf on \*model.AppError, please use require.Nilf instead`
+	require.Error(t, appErr)                 // want `calling require.Error on \*github.com/mattermost/mattermost/server/public/model.AppError, please use require.NotNil instead`
+	require.Errorf(t, appErr, "%s", "foo")   // want `calling require.Errorf on \*github.com/mattermost/mattermost/server/public/model.AppError, please use require.NotNilf instead`
+	require.NoError(t, appErr)               // want `calling require.NoError on \*github.com/mattermost/mattermost/server/public/model.AppError, please use require.Nil instead`
+	require.NoErrorf(t, appErr, "%s", "foo") // want `calling require.NoErrorf on \*github.com/mattermost/mattermost/server/public/model.AppError, please use require.Nilf instead`
 	require.Nil(t, appErr)
 	require.Nilf(t, appErr, "%s", "foo")
 	require.NotNil(t, appErr)
