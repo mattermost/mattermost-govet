@@ -19,6 +19,9 @@ jobs:
             uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
             with:
               go-version: ${{ env.go-version }}
+              cache-dependency-path: | 
+                mattermost-govet/go.sum
+                mattermost-govet/**/testdata/go.sum
           - name: Run golangci-lint
             uses: golangci/golangci-lint-action@639cd343e1d3b897ff35927a75193d57cfcba299 # v3.6.0
             with:
@@ -32,6 +35,11 @@ jobs:
             uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
           - name: Setup Go
             uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
+            with:
+              go-version: ${{ env.go-version }}
+              cache-dependency-path: | 
+                mattermost-govet/go.sum
+                mattermost-govet/**/testdata/go.sum
           - name: Run GoReleaser
             uses: goreleaser/goreleaser-action@336e29918d653399e599bfca99fadc1d7ffbc9f7 # v4.3.0
             with:
@@ -66,6 +74,8 @@ jobs:
             cd mattermost/api
             make build
         - name: Run Tests
+          env:
+            GOPROXY: 'https://proxy.golang.org,direct'
           run: |
             cd mattermost-govet
             make test
