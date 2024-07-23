@@ -76,4 +76,4 @@ jobs:
         - name: Run Tests
           run: |
             cd mattermost-govet
-            GOPROXY= "https://proxy.golang.org,direct" make test
+            GOPROXY="https://proxy.golang.org,direct" make test
