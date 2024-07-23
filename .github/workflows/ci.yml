@@ -74,8 +74,6 @@ jobs:
             cd mattermost/api
             make build
         - name: Run Tests
-          env:
-            GOPROXY: 'https://proxy.golang.org,direct'
           run: |
             cd mattermost-govet
-            make test
+            GOPROXY= "https://proxy.golang.org,direct" make test
