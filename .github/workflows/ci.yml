@@ -49,6 +49,9 @@ jobs:
           uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
           with:
             go-version: ${{ env.go-version }}
+            cache-dependency-path: | 
+              mattermost-govet/go.sum
+              mattermost-govet/**/testdata/go.sum
         - name: Setup Node
           uses: actions/setup-node@e33196f7422957bea03ed53f6fbb155025ffc7b8 # v3.7.0
           with:
