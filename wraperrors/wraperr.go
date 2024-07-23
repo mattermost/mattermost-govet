@@ -17,7 +17,9 @@ var Analyzer = &analysis.Analyzer{
 	Run:  run,
 }
 
-var appErrorType = "*github.com/mattermost/mattermost-server/v6/model.AppError"
+var (
+	appErrorType = util.AppErrType
+)
 
 func run(pass *analysis.Pass) (interface{}, error) {
 	for _, file := range pass.Files {

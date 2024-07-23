@@ -6,11 +6,12 @@ package errorAssertions
 import (
 	"go/ast"
 
+	"github.com/mattermost/mattermost-govet/v2/util"
 	"golang.org/x/tools/go/analysis"
 )
 
-const (
-	appErrorString = "*github.com/mattermost/mattermost-server/v6/model.AppError"
+var (
+	appErrorType = util.AppErrType
 )
 
 var Analyzer = &analysis.Analyzer{
@@ -29,10 +30,10 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		{"NotNil", "error", "Error"},
 		{"Nilf", "error", "NoErrorf"},
 		{"NotNilf", "error", "Errorf"},
-		{"Error", appErrorString, "NotNil"},
-		{"NoError", appErrorString, "Nil"},
-		{"Errorf", appErrorString, "NotNilf"},
-		{"NoErrorf", appErrorString, "Nilf"},
+		{"Error", appErrorType, "NotNil"},
+		{"NoError", appErrorType, "Nil"},
+		{"Errorf", appErrorType, "NotNilf"},
+		{"NoErrorf", appErrorType, "Nilf"},
 	}
 
 	for _, file := range pass.Files {

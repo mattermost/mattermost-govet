@@ -6,18 +6,21 @@ package rawSql
 import (
 	"go/ast"
 	"go/token"
-	"strings"
 	"strconv"
+	"strings"
 
+	"github.com/mattermost/mattermost-govet/v2/util"
 	"golang.org/x/tools/go/analysis"
 )
 
-const sqlstorePackagePath = "github.com/mattermost/mattermost-server/v6/store/sqlstore"
+const (
+	sqlstorePackagePath = util.ServerModulePath + "/channels/store/sqlstore"
+)
 
 var Analyzer = &analysis.Analyzer{
 	Name: "rawSql",
-	Doc: "check invalid usage of raw SQL queries instead of using the squirrel lib",
-	Run: run,
+	Doc:  "check invalid usage of raw SQL queries instead of using the squirrel lib",
+	Run:  run,
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
