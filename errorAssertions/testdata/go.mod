@@ -1,6 +1,6 @@
 module errorAssertions
 
-go 1.22.2
+go 1.21.12
 
 require (
 	github.com/mattermost/mattermost/server/public v0.1.5
