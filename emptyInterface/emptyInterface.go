@@ -10,13 +10,25 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-var Analyzer = &analysis.Analyzer{
-	Name: "emptyInterface",
-	Doc:  "check for usage of interface{} instead of any",
-	Run:  run,
+var (
+	Analyzer = &analysis.Analyzer{
+		Name: "emptyInterface",
+		Doc:  "check for usage of interface{} instead of any",
+		Run:  run,
+	}
+	ignoreFilesPattern string
+)
+
+func init() {
+	Analyzer.Flags.StringVar(&ignoreFilesPattern, "ignore", "", "Comma separated list of files to ignore")
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
+	var ignoreFiles []string
+	if ignoreFilesPattern != "" {
+		ignoreFiles = strings.Split(ignoreFilesPattern, ",")
+	}
+
 	checkList := []string{
 		"Regenerate this file using `make plugin-mocks`.",
 		"Regenerate this file using `make store-mocks`.",
@@ -40,6 +52,13 @@ func run(pass *analysis.Pass) (interface{}, error) {
 			continue
 		}
 
+		if node := file; node != nil {
+			f := pass.Fset.File(node.Pos())
+			if isIgnore(f.Name(), ignoreFiles) {
+				continue
+			}
+		}
+
 		ast.Inspect(file, func(node ast.Node) bool {
 			switch x := node.(type) {
 			case *ast.InterfaceType:
@@ -52,4 +71,13 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		})
 	}
 	return nil, nil
+}
+
+func isIgnore(file string, ignoreFiles []string) bool {
+	for _, f := range ignoreFiles {
+		if strings.HasSuffix(file, f) {
+			return true
+		}
+	}
+	return false
 }
