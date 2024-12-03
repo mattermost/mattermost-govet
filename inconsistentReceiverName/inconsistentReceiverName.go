@@ -7,8 +7,8 @@ import (
 	"go/ast"
 	"strings"
 
+	"github.com/mattermost/mattermost-govet/helpers"
 	"golang.org/x/tools/go/analysis"
-	"github.com/mattermost/mattermost/server/v8/internal/tools/analysis/helpers"
 )
 
 var (
@@ -89,4 +89,3 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	}
 	return nil, nil
 }
-
