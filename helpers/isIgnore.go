@@ -5,7 +5,7 @@ package helpers
 
 import "strings"
 
-func IsIgnore(file string, ignoreFiles []string) bool {
+func IsFileIgnored(file string, ignoreFiles []string) bool {
 	for _, f := range ignoreFiles {
 		if strings.HasSuffix(file, f) {
 			return true

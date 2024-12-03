@@ -51,7 +51,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		ast.Inspect(file, func(node ast.Node) bool {
 			if node != nil {
 				f := pass.Fset.File(node.Pos())
-				if helpers.IsIgnore(f.Name(), ignoreFiles) {
+				if helpers.IsFileIgnored(f.Name(), ignoreFiles) {
 					return false
 				}
 			}

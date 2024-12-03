@@ -55,7 +55,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 
 		if node := file; node != nil {
 			f := pass.Fset.File(node.Pos())
-			if helpers.IsIgnore(f.Name(), ignoreFiles) {
+			if helpers.IsFileIgnored(f.Name(), ignoreFiles) {
 				continue
 			}
 		}
