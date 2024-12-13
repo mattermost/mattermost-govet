@@ -16,11 +16,14 @@ This repository contains mattermost-specific go-vet rules that are used to maint
 1. **pointerToSlice** - check for usage of pointer to slice in function definitions
 1. **mutexLock** - check for cases where a mutex is left locked before returning
 1. **wrapError** - check for original errors being passed as details rather then wrapped
+1. **noSelectStar** - check for SQL queries using SELECT * which breaks forwards compatibility
 
 ## Running Locally
+
 Mattermost Go Vet is designed to run against the `mattermost/mattermost` repo. It assumes that you have the `mattermost/mattermost` and `mattermost/mattermost-govet` in the same top-level directory.
 
 The following can be used to test locally:
+
 ```
 # ENV vars
 MM_ROOT=</path/to/mattermost/>
