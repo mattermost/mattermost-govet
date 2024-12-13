@@ -1,7 +1,12 @@
 package a
 
-func Select(args ...string)  {}
-func Columns(args ...string) {}
+import sq "github.com/Masterminds/squirrel"
+
+type store struct{}
+
+func (s store) getBuilder() sq.StatementBuilderType {
+	return sq.StatementBuilder
+}
 
 func example() {
 	// These should trigger warnings
@@ -14,24 +19,31 @@ func example() {
 	_ = "SELECT"
 
 	// These should trigger warnings for Select function
-	Select("*")     // want `do not use Select with \*: explicitly select the needed columns instead`
-	Select("id, *") // want `do not use Select with \*: explicitly select the needed columns instead`
-	Select("id", "*", "name") // want `do not use Select with \*: explicitly select the needed columns instead`
-	Select("id", "name", "*") // want `do not use Select with \*: explicitly select the needed columns instead`
+	var s store
+	s.getBuilder().Select("*").From("Channels").Where(sq.Eq{"Id": "id"})                                                 // want `do not use SELECT \*: explicitly select the needed columns instead`
+	s.getBuilder().Select("id", "*").From("Channels").Where(sq.Eq{"Id": "id"})                                           // want `do not use SELECT \*: explicitly select the needed columns instead`
+	s.getBuilder().Select("id", "*", "name").From("Channels").Where(sq.Eq{"Id": "id"})                                   // want `do not use SELECT \*: explicitly select the needed columns instead`
+	s.getBuilder().Select("id", "name", "*").From("Channels").Where(sq.Eq{"Id": "id"})                                   // want `do not use SELECT \*: explicitly select the needed columns instead`
+	s.getBuilder().Select().Column("*").From("Channels").Where(sq.Eq{"Id": "id"})                                        // want `do not use SELECT \*: explicitly select the needed columns instead`
+	s.getBuilder().Select().Column("id").Column("*").From("Channels").Where(sq.Eq{"Id": "id"})                           // want `do not use SELECT \*: explicitly select the needed columns instead`
+	s.getBuilder().Select().Column("id").Column("*").Column("name").From("Channels").Where(sq.Eq{"Id": "id"})            // want `do not use SELECT \*: explicitly select the needed columns instead`
+	s.getBuilder().Select().Column("id").Column("name").Column("*").From("Channels").Where(sq.Eq{"Id": "id"})            // want `do not use SELECT \*: explicitly select the needed columns instead`
+	s.getBuilder().Select().Columns("*").From("Channels").Where(sq.Eq{"Id": "id"})                                       // want `do not use SELECT \*: explicitly select the needed columns instead`
+	s.getBuilder().Select().Columns("id", "*").From("Channels").Where(sq.Eq{"Id": "id"})                                 // want `do not use SELECT \*: explicitly select the needed columns instead`
+	s.getBuilder().Select().Columns("id", "*", "name").From("Channels").Where(sq.Eq{"Id": "id"})                         // want `do not use SELECT \*: explicitly select the needed columns instead`
+	s.getBuilder().Select().Columns("id", "name", "*").From("Channels").Where(sq.Eq{"Id": "id"})                         // want `do not use SELECT \*: explicitly select the needed columns instead`
+	s.getBuilder().Select("id", "name").From("Channels").Where(sq.Eq{"Id": s.getBuilder().Select("*").From("ValidIds")}) // want `do not use SELECT \*: explicitly select the needed columns instead`
 
 	// These should not trigger warnings for Select function
-	Select("id, name")
-	Select("")
-	Select("id", "name", "email")
-
-	// These should trigger warnings for Columns function
-	Columns("*")     // want `do not use Columns with \*: explicitly select the needed columns instead`
-	Columns("id, *") // want `do not use Columns with \*: explicitly select the needed columns instead`
-	Columns("id", "*", "name") // want `do not use Columns with \*: explicitly select the needed columns instead`
-	Columns("id", "name", "*") // want `do not use Columns with \*: explicitly select the needed columns instead`
-
-	// These should not trigger warnings for Columns function
-	Columns("id, name")
-	Columns("")
-	Columns("id", "name", "email")
+	s.getBuilder().Select("").From("Channels").Where(sq.Eq{"Id": "id"})
+	s.getBuilder().Select("id", "name").From("Channels").Where(sq.Eq{"Id": "id"})
+	s.getBuilder().Select("id", "name", "email").From("Channels").Where(sq.Eq{"Id": "id"})
+	s.getBuilder().Select().Column("").From("Channels").Where(sq.Eq{"Id": "id"})
+	s.getBuilder().Select().Column("id").From("Channels").Where(sq.Eq{"Id": "id"})
+	s.getBuilder().Select().Column("id").Column("name").From("Channels").Where(sq.Eq{"Id": "id"})
+	s.getBuilder().Select().Columns("").From("Channels").Where(sq.Eq{"Id": "id"})
+	s.getBuilder().Select().Columns("id").From("Channels").Where(sq.Eq{"Id": "id"})
+	s.getBuilder().Select().Columns("id", "name").From("Channels").Where(sq.Eq{"Id": "id"})
+	s.getBuilder().Select().Columns("id", "name").From("Channels").Where(sq.Eq{"Id": "id"})
+	s.getBuilder().Select("id", "name").From("Channels").Where(sq.Eq{"Id": s.getBuilder().Select("Id").From("ValidIds")})
 }

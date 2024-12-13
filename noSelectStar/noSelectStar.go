@@ -16,32 +16,26 @@ var Analyzer = &analysis.Analyzer{
 
 func run(pass *analysis.Pass) (interface{}, error) {
 	inspect := func(node ast.Node) bool {
-		lit, ok := node.(*ast.BasicLit)
-		if !ok || lit.Kind != token.STRING {
+		// Check 1: Look for raw strings containing "SELECT *"
+		if lit, ok := node.(*ast.BasicLit); ok && lit.Kind == token.STRING {
+			if strings.Contains(strings.ToUpper(lit.Value), "SELECT *") {
+				pass.Reportf(lit.Pos(), "do not use SELECT *: explicitly select the needed columns instead")
+			}
 			return true
 		}
 
-		if strings.Contains(strings.ToUpper(lit.Value), "SELECT") &&
-			strings.Contains(lit.Value, "*") {
-			pass.Reportf(lit.Pos(), "do not use SELECT *: explicitly select the needed columns instead")
-		}
-		return true
-	}
-
-	inspectCalls := func(node ast.Node) bool {
-		call, ok := node.(*ast.CallExpr)
-		if !ok {
-			return true
-		}
-
-		if fun, ok := call.Fun.(*ast.Ident); ok {
-			if fun.Name == "Select" || fun.Name == "Columns" {
-				// Check all arguments for "*"
-				for _, arg := range call.Args {
-					if lit, ok := arg.(*ast.BasicLit); ok && 
-						lit.Kind == token.STRING && 
-						strings.Contains(lit.Value, "*") {
-						pass.Reportf(lit.Pos(), "do not use %s with *: explicitly select the needed columns instead", fun.Name)
+		// Check 2: Look for Select/Column/Columns method calls containing "*"
+		if call, ok := node.(*ast.CallExpr); ok {
+			if sel, ok := call.Fun.(*ast.SelectorExpr); ok {
+				methodName := sel.Sel.Name
+				switch methodName {
+				case "Select", "Column", "Columns":
+					for _, arg := range call.Args {
+						if lit, ok := arg.(*ast.BasicLit); ok &&
+							lit.Kind == token.STRING &&
+							strings.Contains(lit.Value, "*") {
+							pass.Reportf(lit.Pos(), "do not use SELECT *: explicitly select the needed columns instead")
+						}
 					}
 				}
 			}
@@ -51,7 +45,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 
 	for _, f := range pass.Files {
 		ast.Inspect(f, inspect)
-		ast.Inspect(f, inspectCalls)
 	}
+
 	return nil, nil
 }
