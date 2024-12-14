@@ -5,6 +5,7 @@ package main
 
 import (
 	"github.com/mattermost/mattermost-govet/v2/apiAuditLogs"
+	"github.com/mattermost/mattermost-govet/v2/appErrorReturn"
 	"github.com/mattermost/mattermost-govet/v2/configtelemetry"
 	"github.com/mattermost/mattermost-govet/v2/emptyInterface"
 	"github.com/mattermost/mattermost-govet/v2/emptyStrCmp"
@@ -32,6 +33,7 @@ func main() {
 		license.EEAnalyzer,
 		structuredLogging.Analyzer,
 		// appErrorWhere.Analyzer,
+		appErrorReturn.Analyzer,
 		tFatal.Analyzer,
 		equalLenAsserts.Analyzer,
 		openApiSync.Analyzer,
