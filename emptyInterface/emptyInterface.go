@@ -7,16 +7,29 @@ import (
 	"go/ast"
 	"strings"
 
+	"github.com/mattermost/mattermost-govet/helpers"
 	"golang.org/x/tools/go/analysis"
 )
 
-var Analyzer = &analysis.Analyzer{
-	Name: "emptyInterface",
-	Doc:  "check for usage of interface{} instead of any",
-	Run:  run,
+var (
+	Analyzer = &analysis.Analyzer{
+		Name: "emptyInterface",
+		Doc:  "check for usage of interface{} instead of any",
+		Run:  run,
+	}
+	ignoreFilesPattern string
+)
+
+func init() {
+	Analyzer.Flags.StringVar(&ignoreFilesPattern, "ignore", "", "Comma separated list of files to ignore")
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
+	var ignoreFiles []string
+	if ignoreFilesPattern != "" {
+		ignoreFiles = strings.Split(ignoreFilesPattern, ",")
+	}
+
 	checkList := []string{
 		"Regenerate this file using `make plugin-mocks`.",
 		"Regenerate this file using `make store-mocks`.",
@@ -38,6 +51,13 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		}
 		if skip {
 			continue
+		}
+
+		if node := file; node != nil {
+			f := pass.Fset.File(node.Pos())
+			if helpers.IsFileIgnored(f.Name(), ignoreFiles) {
+				continue
+			}
 		}
 
 		ast.Inspect(file, func(node ast.Node) bool {
