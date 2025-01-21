@@ -31,7 +31,7 @@ func TestLicense(t *testing.T) {
 			license.EEAnalyzer,
 		},
 		{
-			"Standard",
+			"Source Available",
 			"source_available/enterprise",
 			license.Analyzer,
 		},
