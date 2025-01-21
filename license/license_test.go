@@ -111,6 +111,11 @@ func TestLicense(t *testing.T) {
 					testdata := analysistest.TestData()
 					analysistest.Run(t, testdata, testCase.Analyzer, filepath.Join(testCase.Path, "build/withoutnewline"))
 				})
+
+				t.Run("multiple build directives with valid license", func(t *testing.T) {
+					testdata := analysistest.TestData()
+					analysistest.Run(t, testdata, testCase.Analyzer, filepath.Join(testCase.Path, "build/multipledirectives"))
+				})
 			})
 		})
 	}
