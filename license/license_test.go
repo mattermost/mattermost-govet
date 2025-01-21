@@ -31,7 +31,7 @@ func TestLicense(t *testing.T) {
 			license.EEAnalyzer,
 		},
 		{
-			"Standard",
+			"Source Available",
 			"source_available/enterprise",
 			license.Analyzer,
 		},
@@ -110,6 +110,11 @@ func TestLicense(t *testing.T) {
 				t.Run("directive with valid license but without newline", func(t *testing.T) {
 					testdata := analysistest.TestData()
 					analysistest.Run(t, testdata, testCase.Analyzer, filepath.Join(testCase.Path, "build/withoutnewline"))
+				})
+
+				t.Run("multiple build directives with valid license", func(t *testing.T) {
+					testdata := analysistest.TestData()
+					analysistest.Run(t, testdata, testCase.Analyzer, filepath.Join(testCase.Path, "build/multipledirectives"))
 				})
 			})
 		})

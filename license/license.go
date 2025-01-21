@@ -102,16 +102,34 @@ func checkFile(pass *analysis.Pass, file *ast.File, ignoreFiles []string, expect
 		}
 	}
 
-	// Allow build directives to precede license directives.
+	// Allow the first comment block to be entirely build directives. If found,
+	// the next comment block will be required to be a license and must naturally
+	// be separated by an empty line (otherwise it would be the same comment block).
 	commentGroup := 0
-	for _, buildHeader := range buildHeaders {
-		if strings.HasPrefix(file.Comments[0].List[0].Text, buildHeader) {
-			if len(file.Comments[0].List) > 1 {
-				pass.Reportf(file.Pos(), "Must be an empty line between the build directive and the license")
-				return
+
+	foundBuildHeader := false
+	allBuildHeaders := true
+	for _, commentText := range file.Comments[commentGroup].List {
+		isBuildHeader := false
+		for _, buildHeader := range buildHeaders {
+			if strings.HasPrefix(commentText.Text, buildHeader) {
+				isBuildHeader = true
+				break
 			}
-			commentGroup++
 		}
+
+		if isBuildHeader {
+			foundBuildHeader = true
+		} else {
+			allBuildHeaders = false
+		}
+	}
+
+	if foundBuildHeader && !allBuildHeaders {
+		pass.Reportf(file.Pos(), "Must be an empty line between the build directive and the license")
+		return
+	} else if foundBuildHeader && allBuildHeaders {
+		commentGroup++
 	}
 
 	if len(file.Comments) < commentGroup+1 {
