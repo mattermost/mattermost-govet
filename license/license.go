@@ -4,9 +4,12 @@
 package license
 
 import (
+	"fmt"
 	"go/ast"
 	"regexp"
+	"strconv"
 	"strings"
+	"time"
 
 	"golang.org/x/tools/go/analysis"
 )
@@ -25,11 +28,12 @@ var EEAnalyzer = &analysis.Analyzer{
 
 var (
 	ignoreFilesPattern       string
+	licenseYear              string
 	sourceAvailablePackageRe = regexp.MustCompile("/enterprise")
 )
 
 const (
-	defaultLicenseLine1         = "// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved."
+	licenseLine1Format          = "// Copyright (c) %d-present Mattermost, Inc. All Rights Reserved."
 	defaultLicenseLine2         = "// See LICENSE.txt for license information."
 	enterpriseLicenseLine2      = "// See ENTERPRISE-LICENSE.txt and SOURCE-CODE-LICENSE.txt for license information."
 	sourceAvailableLicenseLine2 = "// See LICENSE.enterprise for license information."
@@ -51,7 +55,9 @@ var generatedHeaders = []string{
 
 func init() {
 	Analyzer.Flags.StringVar(&ignoreFilesPattern, "ignore", "", "Comma separated list of files to ignore")
+	Analyzer.Flags.StringVar(&licenseYear, "year", "2015", "Year to use in license header (2015-present)")
 	EEAnalyzer.Flags.StringVar(&ignoreFilesPattern, "ignore", "", "Comma separated list of files to ignore")
+	EEAnalyzer.Flags.StringVar(&licenseYear, "year", "2015", "Year to use in license header (2015-present)")
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
@@ -60,7 +66,21 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		ignoreFiles = strings.Split(ignoreFilesPattern, ",")
 	}
 
-	expectedLine1 := defaultLicenseLine1
+	// Validate license year
+	year := 2015
+	if licenseYear != "" {
+		if y, err := strconv.Atoi(licenseYear); err != nil {
+			return nil, fmt.Errorf("invalid license year: %v", err)
+		} else {
+			currentYear := time.Now().Year()
+			if y < 2015 || y > currentYear {
+				return nil, fmt.Errorf("license year must be between 2015 and %d", currentYear)
+			}
+			year = y
+		}
+	}
+
+	expectedLine1 := fmt.Sprintf(licenseLine1Format, year)
 	expectedLine2 := defaultLicenseLine2
 
 	if pass.Analyzer.Name == "enterpriseLicense" {
