@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"go/ast"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -30,7 +29,7 @@ const defaultLicenseYear = 2015
 
 var (
 	ignoreFilesPattern       string
-	licenseYear              string
+	licenseYear              int
 	sourceAvailablePackageRe = regexp.MustCompile("/enterprise")
 )
 
@@ -57,9 +56,9 @@ var generatedHeaders = []string{
 
 func init() {
 	Analyzer.Flags.StringVar(&ignoreFilesPattern, "ignore", "", "Comma separated list of files to ignore")
-	Analyzer.Flags.StringVar(&licenseYear, "year", "2015", "Year to use in license header (2015-present)")
+	Analyzer.Flags.IntVar(&licenseYear, "year", defaultLicenseYear, "Year to use in license header (2015-present)")
 	EEAnalyzer.Flags.StringVar(&ignoreFilesPattern, "ignore", "", "Comma separated list of files to ignore")
-	EEAnalyzer.Flags.StringVar(&licenseYear, "year", "2015", "Year to use in license header (2015-present)")
+	EEAnalyzer.Flags.IntVar(&licenseYear, "year", defaultLicenseYear, "Year to use in license header (2015-present)")
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
@@ -69,20 +68,12 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	}
 
 	// Validate license year
-	year := defaultLicenseYear
-	if licenseYear != "" {
-		if y, err := strconv.Atoi(licenseYear); err != nil {
-			return nil, fmt.Errorf("invalid license year: %w", err)
-		} else {
-			currentYear := time.Now().Year()
-			if y < defaultLicenseYear || y > currentYear {
-				return nil, fmt.Errorf("license year must be between %d and %d: %w", defaultLicenseYear, currentYear, err)
-			}
-			year = y
-		}
+	currentYear := time.Now().Year()
+	if licenseYear < defaultLicenseYear || licenseYear > currentYear {
+		return nil, fmt.Errorf("license year must be between %d and %d", defaultLicenseYear, currentYear)
 	}
 
-	expectedLine1 := fmt.Sprintf(licenseLine1Format, year)
+	expectedLine1 := fmt.Sprintf(licenseLine1Format, licenseYear)
 	expectedLine2 := defaultLicenseLine2
 
 	if pass.Analyzer.Name == "enterpriseLicense" {
