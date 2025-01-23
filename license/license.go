@@ -26,6 +26,8 @@ var EEAnalyzer = &analysis.Analyzer{
 	Run:  run,
 }
 
+const defaultLicenseYear = 2015
+
 var (
 	ignoreFilesPattern       string
 	licenseYear              string
@@ -67,14 +69,14 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	}
 
 	// Validate license year
-	year := 2015
+	year := defaultLicenseYear
 	if licenseYear != "" {
 		if y, err := strconv.Atoi(licenseYear); err != nil {
 			return nil, fmt.Errorf("invalid license year: %v", err)
 		} else {
 			currentYear := time.Now().Year()
-			if y < 2015 || y > currentYear {
-				return nil, fmt.Errorf("license year must be between 2015 and %d", currentYear)
+			if y < defaultLicenseYear || y > currentYear {
+				return nil, fmt.Errorf("license year must be between %d and %d", defaultLicenseYear, currentYear)
 			}
 			year = y
 		}
