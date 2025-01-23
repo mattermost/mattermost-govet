@@ -72,11 +72,11 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	year := defaultLicenseYear
 	if licenseYear != "" {
 		if y, err := strconv.Atoi(licenseYear); err != nil {
-			return nil, fmt.Errorf("invalid license year: %v", err)
+			return nil, fmt.Errorf("invalid license year: %w", err)
 		} else {
 			currentYear := time.Now().Year()
 			if y < defaultLicenseYear || y > currentYear {
-				return nil, fmt.Errorf("license year must be between %d and %d", defaultLicenseYear, currentYear)
+				return nil, fmt.Errorf("license year must be between %d and %d: %w", defaultLicenseYear, currentYear, err)
 			}
 			year = y
 		}
