@@ -4,6 +4,7 @@
 package license_test
 
 import (
+	"fmt"
 	"path/filepath"
 	"testing"
 
@@ -13,6 +14,14 @@ import (
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/analysistest"
 )
+
+type MockT struct {
+	calls []string
+}
+
+func (mt *MockT) Errorf(format string, args ...interface{}) {
+	mt.calls = append(mt.calls, fmt.Sprintf(format, args...))
+}
 
 func TestLicense(t *testing.T) {
 	testCases := []struct {
@@ -89,6 +98,77 @@ func TestLicense(t *testing.T) {
 			t.Run("invalid reference on line 2", func(t *testing.T) {
 				testdata := analysistest.TestData()
 				analysistest.Run(t, testdata, testCase.Analyzer, filepath.Join(testCase.Path, "invalid_reference"))
+			})
+
+			t.Run("parameterized year", func(t *testing.T) {
+				t.Run("invalid year", func(t *testing.T) {
+					mt := &MockT{}
+					testdata := analysistest.TestData()
+					require.NoError(t, testCase.Analyzer.Flags.Set("year", "-1"))
+					t.Cleanup(func() {
+						require.NoError(t, testCase.Analyzer.Flags.Set("year", "0"))
+					})
+					analysistest.Run(mt, testdata, testCase.Analyzer, filepath.Join(testCase.Path, "valid"))
+
+					require.Len(t, mt.calls, 1)
+					for _, call := range mt.calls {
+						require.Contains(t, call, "license year must be between 2015 and")
+					}
+				})
+
+				t.Run("before 2015", func(t *testing.T) {
+					mt := &MockT{}
+					testdata := analysistest.TestData()
+					require.NoError(t, testCase.Analyzer.Flags.Set("year", "2014"))
+					t.Cleanup(func() {
+						require.NoError(t, testCase.Analyzer.Flags.Set("year", "0"))
+					})
+					analysistest.Run(mt, testdata, testCase.Analyzer, filepath.Join(testCase.Path, "valid"))
+
+					require.Len(t, mt.calls, 1)
+					for _, call := range mt.calls {
+						require.Contains(t, call, "license year must be between 2015 and")
+					}
+				})
+
+				t.Run("2015", func(t *testing.T) {
+					testdata := analysistest.TestData()
+					require.NoError(t, testCase.Analyzer.Flags.Set("year", "2015"))
+					analysistest.Run(t, testdata, testCase.Analyzer, filepath.Join(testCase.Path, "parameterized_year/2015"))
+				})
+
+				t.Run("2024", func(t *testing.T) {
+					testdata := analysistest.TestData()
+					require.NoError(t, testCase.Analyzer.Flags.Set("year", "2024"))
+					t.Cleanup(func() {
+						require.NoError(t, testCase.Analyzer.Flags.Set("year", "0"))
+					})
+					analysistest.Run(t, testdata, testCase.Analyzer, filepath.Join(testCase.Path, "parameterized_year/2024"))
+				})
+
+				t.Run("current year", func(t *testing.T) {
+					testdata := analysistest.TestData()
+					require.NoError(t, testCase.Analyzer.Flags.Set("year", "2025"))
+					t.Cleanup(func() {
+						require.NoError(t, testCase.Analyzer.Flags.Set("year", "0"))
+					})
+					analysistest.Run(t, testdata, testCase.Analyzer, filepath.Join(testCase.Path, "parameterized_year/current"))
+				})
+
+				t.Run("future year", func(t *testing.T) {
+					mt := &MockT{}
+					testdata := analysistest.TestData()
+					require.NoError(t, testCase.Analyzer.Flags.Set("year", "2026"))
+					t.Cleanup(func() {
+						require.NoError(t, testCase.Analyzer.Flags.Set("year", "0"))
+					})
+					analysistest.Run(mt, testdata, testCase.Analyzer, filepath.Join(testCase.Path, "valid"))
+
+					require.Len(t, mt.calls, 1)
+					for _, call := range mt.calls {
+						require.Contains(t, call, "license year must be between 2015 and")
+					}
+				})
 			})
 
 			t.Run("build directives", func(t *testing.T) {
