@@ -104,15 +104,15 @@ func TestLicense(t *testing.T) {
 				t.Run("invalid year", func(t *testing.T) {
 					mt := &MockT{}
 					testdata := analysistest.TestData()
-					require.NoError(t, testCase.Analyzer.Flags.Set("year", "invalid"))
+					require.NoError(t, testCase.Analyzer.Flags.Set("year", "-1"))
 					t.Cleanup(func() {
-						require.NoError(t, testCase.Analyzer.Flags.Set("year", ""))
+						require.NoError(t, testCase.Analyzer.Flags.Set("year", "0"))
 					})
 					analysistest.Run(mt, testdata, testCase.Analyzer, filepath.Join(testCase.Path, "valid"))
 
 					require.Len(t, mt.calls, 1)
 					for _, call := range mt.calls {
-						require.Contains(t, call, "invalid license year:")
+						require.Contains(t, call, "license year must be between 2015 and")
 					}
 				})
 
@@ -121,7 +121,7 @@ func TestLicense(t *testing.T) {
 					testdata := analysistest.TestData()
 					require.NoError(t, testCase.Analyzer.Flags.Set("year", "2014"))
 					t.Cleanup(func() {
-						require.NoError(t, testCase.Analyzer.Flags.Set("year", ""))
+						require.NoError(t, testCase.Analyzer.Flags.Set("year", "0"))
 					})
 					analysistest.Run(mt, testdata, testCase.Analyzer, filepath.Join(testCase.Path, "valid"))
 
@@ -141,7 +141,7 @@ func TestLicense(t *testing.T) {
 					testdata := analysistest.TestData()
 					require.NoError(t, testCase.Analyzer.Flags.Set("year", "2024"))
 					t.Cleanup(func() {
-						require.NoError(t, testCase.Analyzer.Flags.Set("year", ""))
+						require.NoError(t, testCase.Analyzer.Flags.Set("year", "0"))
 					})
 					analysistest.Run(t, testdata, testCase.Analyzer, filepath.Join(testCase.Path, "parameterized_year/2024"))
 				})
@@ -150,7 +150,7 @@ func TestLicense(t *testing.T) {
 					testdata := analysistest.TestData()
 					require.NoError(t, testCase.Analyzer.Flags.Set("year", "2025"))
 					t.Cleanup(func() {
-						require.NoError(t, testCase.Analyzer.Flags.Set("year", ""))
+						require.NoError(t, testCase.Analyzer.Flags.Set("year", "0"))
 					})
 					analysistest.Run(t, testdata, testCase.Analyzer, filepath.Join(testCase.Path, "parameterized_year/current"))
 				})
@@ -160,7 +160,7 @@ func TestLicense(t *testing.T) {
 					testdata := analysistest.TestData()
 					require.NoError(t, testCase.Analyzer.Flags.Set("year", "2026"))
 					t.Cleanup(func() {
-						require.NoError(t, testCase.Analyzer.Flags.Set("year", ""))
+						require.NoError(t, testCase.Analyzer.Flags.Set("year", "0"))
 					})
 					analysistest.Run(mt, testdata, testCase.Analyzer, filepath.Join(testCase.Path, "valid"))
 

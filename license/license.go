@@ -68,6 +68,10 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	}
 
 	// Validate license year
+	if licenseYear == 0 {
+		licenseYear = defaultLicenseYear
+	}
+
 	currentYear := time.Now().Year()
 	if licenseYear < defaultLicenseYear || licenseYear > currentYear {
 		return nil, fmt.Errorf("license year must be between %d and %d", defaultLicenseYear, currentYear)
