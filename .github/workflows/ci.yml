@@ -6,7 +6,7 @@ on:
   pull_request:
 
 env:
-    go-version: "1.19.5"
+    go-version: "1.23.7"
 
 jobs:
     check-golangci-lint:
