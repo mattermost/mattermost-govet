@@ -9,7 +9,7 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-var selectStarRegex = regexp.MustCompile(`(?i)SELECT\s+\*`)
+var selectStarRegex = regexp.MustCompile(`(?i)SELECT\s+(.+\.)?\*`)
 
 // replaceCountStar replaces COUNT(*) patterns with COUNT() to avoid false positives
 func replaceCountStar(s string) string {

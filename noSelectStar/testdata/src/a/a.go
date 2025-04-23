@@ -12,6 +12,8 @@ func example() {
 	// These should trigger warnings
 	_ = "SELECT * FROM users" // want `do not use SELECT \*: explicitly select the needed columns instead`
 	_ = "select * from table" // want `do not use SELECT \*: explicitly select the needed columns instead`
+	_ = "SELECT a.* FROM users a" // want `do not use SELECT \*: explicitly select the needed columns instead`
+	_ = "SELECT users.* FROM users" // want `do not use SELECT \*: explicitly select the needed columns instead`
 
 	// These should not trigger warnings
 	_ = "SELECT id, name FROM users"
@@ -44,6 +46,10 @@ func example() {
 	s.getBuilder().Select("*", "count(*)").From("Channels")                                                              // want `do not use SELECT \*: explicitly select the needed columns instead`
 	s.getBuilder().Select().Column("count(*)").Column("*").From("Channels")                                              // want `do not use SELECT \*: explicitly select the needed columns instead`
 	s.getBuilder().Select().Columns("count(*)", "*").From("Channels")                                                    // want `do not use SELECT \*: explicitly select the needed columns instead`
+	s.getBuilder().Select("c.*").From("Channels c")                                                                      // want `do not use SELECT \*: explicitly select the needed columns instead`
+	s.getBuilder().Select("Channels.*").From("Channels")                                                                 // want `do not use SELECT \*: explicitly select the needed columns instead`
+	s.getBuilder().Select().Column("c.*").From("Channels c")                                                             // want `do not use SELECT \*: explicitly select the needed columns instead`
+	s.getBuilder().Select().Columns("Channels.*").From("Channels")                                                       // want `do not use SELECT \*: explicitly select the needed columns instead`
 
 	// These should not trigger warnings for Select function
 	s.getBuilder().Select("").From("Channels").Where(sq.Eq{"Id": "id"})
