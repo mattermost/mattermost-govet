@@ -12,7 +12,7 @@ import (
 
 type Routes struct {
 	Root    *mux.Router // ''
-	ApiRoot *mux.Router // 'api/v4'
+	APIRoot *mux.Router // 'api/v4'
 
 	Users  *mux.Router // 'api/v4/userzs'
 	Groups *mux.Router // 'api/v4/groups'
@@ -30,10 +30,10 @@ func Init(root *mux.Router) *API {
 		BaseRoutes: &Routes{},
 	}
 	api.BaseRoutes.Root = root
-	api.BaseRoutes.ApiRoot = root.PathPrefix("api/v4").Subrouter()
+	api.BaseRoutes.APIRoot = root.PathPrefix("api/v4").Subrouter()
 
-	api.BaseRoutes.Users = api.BaseRoutes.ApiRoot.PathPrefix("/users").Subrouter()   // want "PathPrefix doesn't match field comment for field 'Users': 'api/v4/users' vs 'api/v4/userzs'"
-	api.BaseRoutes.Groups = api.BaseRoutes.ApiRoot.PathPrefix("/gruops").Subrouter() // want "PathPrefix doesn't match field comment for field 'Groups': 'api/v4/gruops' vs 'api/v4/groups'"
+	api.BaseRoutes.Users = api.BaseRoutes.APIRoot.PathPrefix("/users").Subrouter()   // want "PathPrefix doesn't match field comment for field 'Users': 'api/v4/users' vs 'api/v4/userzs'"
+	api.BaseRoutes.Groups = api.BaseRoutes.APIRoot.PathPrefix("/gruops").Subrouter() // want "PathPrefix doesn't match field comment for field 'Groups': 'api/v4/gruops' vs 'api/v4/groups'"
 	api.InitUsers()
 	return api
 }

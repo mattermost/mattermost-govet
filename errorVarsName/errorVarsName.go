@@ -7,11 +7,12 @@ import (
 	"go/ast"
 	"strings"
 
+	"github.com/mattermost/mattermost-govet/v2/util"
 	"golang.org/x/tools/go/analysis"
 )
 
 const (
-	appErrorString = "*github.com/mattermost/mattermost-server/v5/model.AppError"
+	appErrorString = "*" + util.ModelPkgPath + ".AppError"
 )
 
 var Analyzer = &analysis.Analyzer{

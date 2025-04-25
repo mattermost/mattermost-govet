@@ -4,15 +4,13 @@
 package openApiSync
 
 import (
-	"math/rand"
 	"testing"
 
 	"golang.org/x/tools/go/analysis/analysistest"
 )
 
 func Test(t *testing.T) {
-	rand.Seed(1)
 	testdata := analysistest.TestData()
-	specFile = "../../mattermost-api-reference/v4/html/static/mattermost-openapi-v4.yaml"
+	specFile = "../../mattermost/api/v4/html/static/mattermost-openapi-v4.yaml"
 	analysistest.Run(t, testdata, Analyzer, "api")
 }
