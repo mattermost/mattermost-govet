@@ -10,13 +10,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/mattermost/mattermost-govet/facts"
+	"github.com/mattermost/mattermost-govet/v2/facts"
+	"github.com/mattermost/mattermost-govet/v2/util"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
 	"golang.org/x/tools/go/ast/inspector"
 )
 
-const mattermostPackagePath = "github.com/mattermost/mattermost-server/v5/"
+const mattermostPackagePath = "github.com/mattermost/mattermost-server/v6/"
 
 var Analyzer = &analysis.Analyzer{
 	Name:     "apiAuditLogs",
@@ -26,7 +27,7 @@ var Analyzer = &analysis.Analyzer{
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
-	if pass.Pkg.Path() != mattermostPackagePath+"api4" {
+	if pass.Pkg.Path() != util.API4PkgPath {
 		return nil, nil
 	}
 
@@ -68,14 +69,14 @@ func run(pass *analysis.Pass) (interface{}, error) {
 					return true
 				}
 
-				if instanceType.Type.String() == "*"+mattermostPackagePath+"audit.Record" && fun.Sel.Name == "Success" {
+				if instanceType.Type.String() == "*"+util.ServerModulePath+"/channels/audit.Record" && fun.Sel.Name == "Success" {
 					successCallFound = true
 				}
-				if instanceType.Type.String() == "*"+mattermostPackagePath+"web.Context" && (fun.Sel.Name == "LogAuditRec" || fun.Sel.Name == "LogAuditRecWithLevel") {
+				if instanceType.Type.String() == "*"+mattermostPackagePath+"/channels/web.Context" && (fun.Sel.Name == "LogAuditRec" || fun.Sel.Name == "LogAuditRecWithLevel") {
 					logCallFound = true
 				}
 
-				if instanceType.Type.String() == "*"+mattermostPackagePath+"web.Context" && fun.Sel.Name == "MakeAuditRecord" {
+				if instanceType.Type.String() == "*"+mattermostPackagePath+"/channels/web.Context" && fun.Sel.Name == "MakeAuditRecord" {
 					initializationFound = true
 					if len(n.Args) < 2 {
 						pass.Reportf(n.Pos(), "Invalid record initialization, expected at least 2 parameters")

@@ -7,6 +7,7 @@ import (
 	"go/ast"
 	"go/types"
 
+	"github.com/mattermost/mattermost-govet/v2/util"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
 	"golang.org/x/tools/go/ast/inspector"
@@ -26,7 +27,7 @@ var ApiHandlerFacts = &analysis.Analyzer{
 }
 
 func apiHandlers(pass *analysis.Pass) (interface{}, error) {
-	if pass.Pkg.Path() != "github.com/mattermost/mattermost-server/v5/api4" {
+	if pass.Pkg.Path() != util.API4PkgPath {
 		return nil, nil
 	}
 

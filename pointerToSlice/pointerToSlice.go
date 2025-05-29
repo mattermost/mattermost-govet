@@ -7,7 +7,6 @@ import (
 	"go/ast"
 	"strings"
 
-	"github.com/mattermost/mattermost-govet/helpers"
 	"golang.org/x/tools/go/analysis"
 )
 
@@ -51,7 +50,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		ast.Inspect(file, func(node ast.Node) bool {
 			if node != nil {
 				f := pass.Fset.File(node.Pos())
-				if helpers.IsFileIgnored(f.Name(), ignoreFiles) {
+				if isIgnore(f.Name(), ignoreFiles) {
 					return false
 				}
 			}
@@ -78,4 +77,13 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	}
 
 	return nil, nil
+}
+
+func isIgnore(file string, ignoreFiles []string) bool {
+	for _, f := range ignoreFiles {
+		if strings.HasSuffix(file, f) {
+			return true
+		}
+	}
+	return false
 }

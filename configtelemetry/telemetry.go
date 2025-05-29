@@ -12,12 +12,13 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/mattermost/mattermost-govet/v2/util"
 	"golang.org/x/tools/go/analysis"
 )
 
 var (
-	telemetryPkgPath = "github.com/mattermost/mattermost-server/v5/services/telemetry"
-	modelPkgPath     = "github.com/mattermost/mattermost-server/v5/model"
+	telemetryPkgPath = util.ServerModulePath + "/platform/telemetry"
+	modelPkgPath     = util.ModelPkgPath
 )
 
 const (
