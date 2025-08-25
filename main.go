@@ -20,6 +20,7 @@ import (
 	"github.com/mattermost/mattermost-govet/v2/openApiSync"
 	"github.com/mattermost/mattermost-govet/v2/pointerToSlice"
 	"github.com/mattermost/mattermost-govet/v2/rawSql"
+	"github.com/mattermost/mattermost-govet/v2/requestCtxNaming"
 	"github.com/mattermost/mattermost-govet/v2/structuredLogging"
 	"github.com/mattermost/mattermost-govet/v2/tFatal"
 	"github.com/mattermost/mattermost-govet/v2/wraperrors"
@@ -49,5 +50,6 @@ func main() {
 		mutexLock.Analyzer,
 		wraperrors.Analyzer,
 		noSelectStar.Analyzer,
+		requestCtxNaming.Analyzer,
 	)
 }
