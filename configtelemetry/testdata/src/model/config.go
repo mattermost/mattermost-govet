@@ -9,8 +9,8 @@ const (
 
 type ServiceSettings struct {
 	SiteURL                  *string  `access:"environment,authentication,write_restrictable"`
-	WebsocketURL             *string  `access:"write_restrictable,cloud_restrictable"`             // want `ServiceSettings.WebsocketURL is not used in telemetry`
-	LicenseFileLocation      *string  `access:"write_restrictable,cloud_restrictable"`             // want `ServiceSettings.LicenseFileLocation is not used in telemetry`
+	WebsocketURL             *string  `access:"write_restrictable,cloud_restrictable"`
+	LicenseFileLocation      *string  `access:"write_restrictable,cloud_restrictable"`
 	ListenAddress            *string  `access:"environment,write_restrictable,cloud_restrictable"` // telemetry: none
 	TLSStrictTransport       *bool    `access:"write_restrictable,cloud_restrictable"`
 	TLSStrictTransportMaxAge *int64   `access:"write_restrictable,cloud_restrictable"` // telemetry: none
@@ -22,7 +22,7 @@ type ServiceSettings struct {
 type GlobalRelayMessageExportSettings struct {
 	CustomerType      *string `access:"compliance"` // must be either A9 or A10, dictates SMTP server url
 	SmtpUsername      string  `access:"compliance"`
-	SMTPServerTimeout *int    `access:"compliance"` // want `MessageExportSettings.GlobalRelaySettings.SMTPServerTimeout is not used in telemetry`
+	SMTPServerTimeout *int    `access:"compliance"`
 }
 
 type MessageExportSettings struct {
@@ -34,7 +34,7 @@ type MessageExportSettings struct {
 }
 
 type CloudSettings struct {
-	CWSUrl *string `access:"environment,write_restrictable"` // want `CloudSettings.CWSUrl is not used in telemetry`
+	CWSUrl *string `access:"environment,write_restrictable"`
 }
 
 type Config struct {

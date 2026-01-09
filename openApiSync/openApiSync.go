@@ -232,7 +232,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	initFunctions, routerPrefixes := validateComments(pass)
 
 	var swaggerPaths []string
-	for p := range swagger.Paths {
+	for p := range swagger.Paths.Map() {
 		swaggerPaths = append(swaggerPaths, p)
 	}
 	model := fuzzy.NewModel()
