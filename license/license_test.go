@@ -148,7 +148,7 @@ func TestLicense(t *testing.T) {
 
 				t.Run("current year", func(t *testing.T) {
 					testdata := analysistest.TestData()
-					require.NoError(t, testCase.Analyzer.Flags.Set("year", "2025"))
+					require.NoError(t, testCase.Analyzer.Flags.Set("year", "2026"))
 					t.Cleanup(func() {
 						require.NoError(t, testCase.Analyzer.Flags.Set("year", "0"))
 					})
@@ -158,7 +158,7 @@ func TestLicense(t *testing.T) {
 				t.Run("future year", func(t *testing.T) {
 					mt := &MockT{}
 					testdata := analysistest.TestData()
-					require.NoError(t, testCase.Analyzer.Flags.Set("year", "2026"))
+					require.NoError(t, testCase.Analyzer.Flags.Set("year", "2027"))
 					t.Cleanup(func() {
 						require.NoError(t, testCase.Analyzer.Flags.Set("year", "0"))
 					})

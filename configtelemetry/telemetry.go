@@ -36,7 +36,7 @@ var Analyzer = &analysis.Analyzer{
 
 func run(pass *analysis.Pass) (interface{}, error) {
 	if pass.Pkg.Path() != telemetryPkgPath {
-		return nil, nil
+		return pass, nil
 	}
 
 	// we need to find model.Config definition to parse its Type Spec
@@ -49,24 +49,24 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	}
 
 	if configObject == nil {
-		return nil, errors.New("could not find model.Config type")
+		return pass, errors.New("could not find model.Config type")
 	}
 
 	if !configObject.Pos().IsValid() {
-		return nil, errors.New("model.Config position is not valid")
+		return pass, errors.New("model.Config position is not valid")
 	}
 
 	srcFile := pass.Fset.PositionFor(configObject.Pos(), false).Filename
 	file, err := parser.ParseFile(pass.Fset, srcFile, nil, parser.AllErrors|parser.ParseComments)
 	if err != nil {
-		return nil, fmt.Errorf("could parse file %q: %w", srcFile, err)
+		return pass, fmt.Errorf("could parse file %q: %w", srcFile, err)
 	}
 
 	pass.Files = append(pass.Files, file)
 
 	configMap, err := typeFieldMap(file, configObject.Name())
 	if err != nil {
-		return nil, fmt.Errorf("could generate fields map: %w", err)
+		return pass, fmt.Errorf("could generate fields map: %w", err)
 	}
 
 	var allExpressions []string
