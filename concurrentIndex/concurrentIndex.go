@@ -32,31 +32,27 @@ func init() {
 	Analyzer.Flags.StringVar(&sqlPath, "path", "", "Relative path to a directory of .sql files to scan recursively")
 }
 
-type diagnostic struct {
-	message string
-}
-
-func checkStatement(stmt string) *diagnostic {
+func checkStatement(stmt string) string {
 	if createIndexRegex.MatchString(stmt) && !concurrentlyRegex.MatchString(stmt) {
-		return &diagnostic{message: "use CREATE INDEX CONCURRENTLY instead of CREATE INDEX to avoid blocking DML"}
+		return "use CREATE INDEX CONCURRENTLY instead of CREATE INDEX to avoid blocking DML"
 	}
 	if dropIndexRegex.MatchString(stmt) && !dropConcurrentlyRegex.MatchString(stmt) {
-		return &diagnostic{message: "use DROP INDEX CONCURRENTLY instead of DROP INDEX to avoid blocking DML"}
+		return "use DROP INDEX CONCURRENTLY instead of DROP INDEX to avoid blocking DML"
 	}
-	return nil
+	return ""
 }
 
-func checkLine(line string) *diagnostic {
+func checkLine(line string) string {
 	for _, stmt := range strings.Split(line, ";") {
 		stmt = strings.TrimSpace(stripSQLComments(stmt))
 		if stmt == "" {
 			continue
 		}
-		if d := checkStatement(stmt); d != nil {
-			return d
+		if msg := checkStatement(stmt); msg != "" {
+			return msg
 		}
 	}
-	return nil
+	return ""
 }
 
 func stripSQLComments(s string) string {
@@ -90,8 +86,8 @@ func run(pass *analysis.Pass) (interface{}, error) {
 				val = strings.Trim(lit.Value, "`")
 			}
 
-			if d := checkLine(val); d != nil {
-				pass.Reportf(lit.Pos(), "%s", d.message)
+			if msg := checkLine(val); msg != "" {
+				pass.Reportf(lit.Pos(), "%s", msg)
 			}
 			return true
 		})
@@ -107,11 +103,11 @@ func run(pass *analysis.Pass) (interface{}, error) {
 }
 
 func scanSQLDir(pass *analysis.Pass, root string) error {
-	if _, err := os.Stat(root); os.IsNotExist(err) {
-		return nil
-	}
 	return filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
+			if os.IsNotExist(err) {
+				return nil
+			}
 			return err
 		}
 		if d.IsDir() || !strings.HasSuffix(path, ".sql") {
@@ -182,8 +178,8 @@ func checkSQLFile(pass *analysis.Pass, name string) error {
 
 			stmt := strings.TrimSpace(current[:semi])
 			if stmt != "" {
-				if d := checkStatement(stmt); d != nil {
-					pass.Reportf(tf.LineStart(startLine), "%s", d.message)
+				if msg := checkStatement(stmt); msg != "" {
+					pass.Reportf(tf.LineStart(startLine), "%s", msg)
 				}
 			}
 
@@ -197,8 +193,8 @@ func checkSQLFile(pass *analysis.Pass, name string) error {
 	}
 
 	if stmtBuf.Len() > 0 {
-		if d := checkStatement(stmtBuf.String()); d != nil {
-			pass.Reportf(tf.LineStart(startLine), "%s", d.message)
+		if msg := checkStatement(stmtBuf.String()); msg != "" {
+			pass.Reportf(tf.LineStart(startLine), "%s", msg)
 		}
 	}
 

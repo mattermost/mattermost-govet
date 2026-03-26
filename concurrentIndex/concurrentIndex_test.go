@@ -193,12 +193,11 @@ func TestCheckLine(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d := checkLine(tt.line)
+			msg := checkLine(tt.line)
 			if tt.wantMsg == "" {
-				assert.Nil(t, d)
+				assert.Empty(t, msg)
 			} else {
-				require.NotNil(t, d)
-				assert.Equal(t, tt.wantMsg, d.message)
+				assert.Equal(t, tt.wantMsg, msg)
 			}
 		})
 	}
