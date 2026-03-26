@@ -50,13 +50,14 @@ func TestSQLDir(t *testing.T) {
 			dropCount++
 		}
 	}
-	assert.Equal(t, 4, createCount, "expected 4 CREATE INDEX diagnostics")
+	assert.Equal(t, 5, createCount, "expected 5 CREATE INDEX diagnostics")
 	assert.Equal(t, 2, dropCount, "expected 2 DROP INDEX diagnostics")
 
 	badCount := 0
 	nestedCount := 0
 	multilineCount := 0
 	multistmtCount := 0
+	nolintCount := 0
 	for _, f := range files {
 		switch {
 		case strings.HasPrefix(f, "000002_bad"):
@@ -67,12 +68,15 @@ func TestSQLDir(t *testing.T) {
 			multilineCount++
 		case strings.HasPrefix(f, "000005_multistmt"):
 			multistmtCount++
+		case strings.HasPrefix(f, "000006_nolint"):
+			nolintCount++
 		}
 	}
 	assert.Equal(t, 3, badCount, "expected 3 diagnostics from 000002_bad.up.sql")
 	assert.Equal(t, 1, nestedCount, "expected 1 diagnostic from sub/000003_nested.up.sql")
 	assert.Equal(t, 1, multilineCount, "expected 1 diagnostic from 000004_multiline.up.sql")
 	assert.Equal(t, 1, multistmtCount, "expected 1 diagnostic from 000005_multistmt.up.sql")
+	assert.Equal(t, 1, nolintCount, "expected 1 diagnostic from 000006_nolint.up.sql (only the non-nolinted statement)")
 }
 
 func TestSQLDirSkipsComments(t *testing.T) {
@@ -188,6 +192,14 @@ func TestCheckLine(t *testing.T) {
 		{
 			name: "pure comment fragment",
 			line: "-- just a comment",
+		},
+		{
+			name: "nolint suppresses CREATE INDEX",
+			line: "-- nolint:concurrentIndex\nCREATE INDEX idx_a ON t (c);",
+		},
+		{
+			name: "nolint suppresses DROP INDEX",
+			line: "-- nolint:concurrentIndex\nDROP INDEX IF EXISTS idx_a;",
 		},
 	}
 
