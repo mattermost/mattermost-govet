@@ -77,28 +77,9 @@ func TestSQLDir(t *testing.T) {
 	assert.Equal(t, 1, multilineCount, "expected 1 diagnostic from 000004_multiline.up.sql")
 	assert.Equal(t, 1, multistmtCount, "expected 1 diagnostic from 000005_multistmt.up.sql")
 	assert.Equal(t, 1, nolintCount, "expected 1 diagnostic from 000006_nolint.up.sql (only the non-nolinted statement)")
-}
 
-func TestSQLDirSkipsComments(t *testing.T) {
-	testdata := analysistest.TestData()
-	migrationsDir := filepath.Join(testdata, "migrations")
-
-	fset := token.NewFileSet()
-	var diags []analysis.Diagnostic
-	pass := &analysis.Pass{
-		Analyzer: Analyzer,
-		Fset:     fset,
-		Report: func(d analysis.Diagnostic) {
-			diags = append(diags, d)
-		},
-	}
-
-	err := scanSQLDir(pass, migrationsDir)
-	require.NoError(t, err)
-
-	for _, d := range diags {
-		pos := fset.Position(d.Pos)
-		require.NotContains(t, filepath.Base(pos.Filename), "000001_good",
+	for _, f := range files {
+		assert.NotContains(t, f, "000001_good",
 			"good migration file should not have diagnostics")
 	}
 }

@@ -13,6 +13,11 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
+const (
+	diagCreateIndex = "use CREATE INDEX CONCURRENTLY instead of CREATE INDEX to avoid blocking DML"
+	diagDropIndex   = "use DROP INDEX CONCURRENTLY instead of DROP INDEX to avoid blocking DML"
+)
+
 var (
 	createIndexRegex      = regexp.MustCompile(`(?i)\bCREATE\s+(UNIQUE\s+)?INDEX\b`)
 	concurrentlyRegex     = regexp.MustCompile(`(?i)\bCREATE\s+(UNIQUE\s+)?INDEX\s+CONCURRENTLY\b`)
@@ -34,15 +39,18 @@ func init() {
 
 func checkStatement(stmt string) string {
 	if createIndexRegex.MatchString(stmt) && !concurrentlyRegex.MatchString(stmt) {
-		return "use CREATE INDEX CONCURRENTLY instead of CREATE INDEX to avoid blocking DML"
+		return diagCreateIndex
 	}
 	if dropIndexRegex.MatchString(stmt) && !dropConcurrentlyRegex.MatchString(stmt) {
-		return "use DROP INDEX CONCURRENTLY instead of DROP INDEX to avoid blocking DML"
+		return diagDropIndex
 	}
 	return ""
 }
 
 func hasNolintDirective(s string) bool {
+	if !strings.Contains(s, "nolint:concurrentIndex") {
+		return false
+	}
 	for _, raw := range strings.Split(s, "\n") {
 		t := strings.TrimSpace(raw)
 		if strings.HasPrefix(t, "--") && strings.Contains(t, "nolint:concurrentIndex") {
@@ -52,7 +60,14 @@ func hasNolintDirective(s string) bool {
 	return false
 }
 
+func containsIndexKeyword(s string) bool {
+	return strings.Contains(strings.ToLower(s), "index")
+}
+
 func checkLine(line string) string {
+	if !containsIndexKeyword(line) {
+		return ""
+	}
 	if hasNolintDirective(line) {
 		return ""
 	}
