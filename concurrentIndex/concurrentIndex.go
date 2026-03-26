@@ -48,8 +48,8 @@ func checkStatement(stmt string) *diagnostic {
 
 func checkLine(line string) *diagnostic {
 	for _, stmt := range strings.Split(line, ";") {
-		stmt = strings.TrimSpace(stmt)
-		if stmt == "" || strings.HasPrefix(stmt, "--") {
+		stmt = strings.TrimSpace(stripSQLComments(stmt))
+		if stmt == "" {
 			continue
 		}
 		if d := checkStatement(stmt); d != nil {
@@ -57,6 +57,21 @@ func checkLine(line string) *diagnostic {
 		}
 	}
 	return nil
+}
+
+func stripSQLComments(s string) string {
+	var b strings.Builder
+	for _, raw := range strings.Split(s, "\n") {
+		t := strings.TrimSpace(raw)
+		if t == "" || strings.HasPrefix(t, "--") {
+			continue
+		}
+		if b.Len() > 0 {
+			b.WriteByte(' ')
+		}
+		b.WriteString(t)
+	}
+	return b.String()
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
@@ -158,11 +173,26 @@ func checkSQLFile(pass *analysis.Pass, name string) error {
 		}
 		stmtBuf.WriteString(trimmed)
 
-		if strings.Contains(trimmed, ";") {
-			if d := checkStatement(stmtBuf.String()); d != nil {
-				pass.Reportf(tf.LineStart(startLine), "%s", d.message)
+		for {
+			current := stmtBuf.String()
+			semi := strings.Index(current, ";")
+			if semi < 0 {
+				break
 			}
+
+			stmt := strings.TrimSpace(current[:semi])
+			if stmt != "" {
+				if d := checkStatement(stmt); d != nil {
+					pass.Reportf(tf.LineStart(startLine), "%s", d.message)
+				}
+			}
+
+			rest := strings.TrimSpace(current[semi+1:])
 			stmtBuf.Reset()
+			if rest != "" {
+				stmtBuf.WriteString(rest)
+				startLine = lineNum
+			}
 		}
 	}
 

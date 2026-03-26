@@ -50,12 +50,13 @@ func TestSQLDir(t *testing.T) {
 			dropCount++
 		}
 	}
-	assert.Equal(t, 3, createCount, "expected 3 CREATE INDEX diagnostics")
+	assert.Equal(t, 4, createCount, "expected 4 CREATE INDEX diagnostics")
 	assert.Equal(t, 2, dropCount, "expected 2 DROP INDEX diagnostics")
 
 	badCount := 0
 	nestedCount := 0
 	multilineCount := 0
+	multistmtCount := 0
 	for _, f := range files {
 		switch {
 		case strings.HasPrefix(f, "000002_bad"):
@@ -64,11 +65,14 @@ func TestSQLDir(t *testing.T) {
 			nestedCount++
 		case strings.HasPrefix(f, "000004_multiline"):
 			multilineCount++
+		case strings.HasPrefix(f, "000005_multistmt"):
+			multistmtCount++
 		}
 	}
 	assert.Equal(t, 3, badCount, "expected 3 diagnostics from 000002_bad.up.sql")
 	assert.Equal(t, 1, nestedCount, "expected 1 diagnostic from sub/000003_nested.up.sql")
 	assert.Equal(t, 1, multilineCount, "expected 1 diagnostic from 000004_multiline.up.sql")
+	assert.Equal(t, 1, multistmtCount, "expected 1 diagnostic from 000005_multistmt.up.sql")
 }
 
 func TestSQLDirSkipsComments(t *testing.T) {
@@ -175,6 +179,15 @@ func TestCheckLine(t *testing.T) {
 		{
 			name: "multi-statement all safe",
 			line: "CREATE INDEX CONCURRENTLY idx_a ON t (c); DROP INDEX CONCURRENTLY IF EXISTS idx_b;",
+		},
+		{
+			name:    "comment then unsafe SQL in multiline fragment",
+			line:    "-- note\nCREATE INDEX idx_a ON t (c);",
+			wantMsg: "use CREATE INDEX CONCURRENTLY instead of CREATE INDEX to avoid blocking DML",
+		},
+		{
+			name: "pure comment fragment",
+			line: "-- just a comment",
 		},
 	}
 
