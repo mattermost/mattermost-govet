@@ -36,12 +36,25 @@ type diagnostic struct {
 	message string
 }
 
-func checkLine(line string) *diagnostic {
-	if createIndexRegex.MatchString(line) && !concurrentlyRegex.MatchString(line) {
+func checkStatement(stmt string) *diagnostic {
+	if createIndexRegex.MatchString(stmt) && !concurrentlyRegex.MatchString(stmt) {
 		return &diagnostic{message: "use CREATE INDEX CONCURRENTLY instead of CREATE INDEX to avoid blocking DML"}
 	}
-	if dropIndexRegex.MatchString(line) && !dropConcurrentlyRegex.MatchString(line) {
+	if dropIndexRegex.MatchString(stmt) && !dropConcurrentlyRegex.MatchString(stmt) {
 		return &diagnostic{message: "use DROP INDEX CONCURRENTLY instead of DROP INDEX to avoid blocking DML"}
+	}
+	return nil
+}
+
+func checkLine(line string) *diagnostic {
+	for _, stmt := range strings.Split(line, ";") {
+		stmt = strings.TrimSpace(stmt)
+		if stmt == "" || strings.HasPrefix(stmt, "--") {
+			continue
+		}
+		if d := checkStatement(stmt); d != nil {
+			return d
+		}
 	}
 	return nil
 }
@@ -70,38 +83,91 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	}
 
 	if sqlPath != "" {
-		scanSQLDir(pass, sqlPath)
+		if err := scanSQLDir(pass, sqlPath); err != nil {
+			return nil, err
+		}
 	}
 
 	return nil, nil
 }
 
-func scanSQLDir(pass *analysis.Pass, root string) {
-	filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
-		if err != nil || d.IsDir() || !strings.HasSuffix(path, ".sql") {
+func scanSQLDir(pass *analysis.Pass, root string) error {
+	return filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() || !strings.HasSuffix(path, ".sql") {
 			return nil
 		}
-		checkSQLFile(pass, path)
-		return nil
+		return checkSQLFile(pass, path)
 	})
 }
 
-func checkSQLFile(pass *analysis.Pass, name string) {
+func checkSQLFile(pass *analysis.Pass, name string) error {
 	content, err := os.ReadFile(name)
 	if err != nil {
-		return
+		return err
 	}
 
 	tf := pass.Fset.AddFile(name, -1, len(content))
 	tf.SetLinesForContent(content)
 
-	for i, line := range strings.Split(string(content), "\n") {
+	lines := strings.Split(string(content), "\n")
+	var stmtBuf strings.Builder
+	startLine := 1
+	inBlockComment := false
+
+	for i, line := range lines {
+		lineNum := i + 1
 		trimmed := strings.TrimSpace(line)
+
+		if inBlockComment {
+			if idx := strings.Index(trimmed, "*/"); idx >= 0 {
+				inBlockComment = false
+				trimmed = strings.TrimSpace(trimmed[idx+2:])
+			} else {
+				continue
+			}
+		}
+
+		if strings.HasPrefix(trimmed, "/*") {
+			if idx := strings.Index(trimmed, "*/"); idx >= 0 {
+				trimmed = strings.TrimSpace(trimmed[idx+2:])
+			} else {
+				inBlockComment = true
+				continue
+			}
+		}
+
 		if strings.HasPrefix(trimmed, "--") {
 			continue
 		}
-		if d := checkLine(line); d != nil {
-			pass.Reportf(tf.LineStart(i+1), "%s", d.message)
+
+		if trimmed == "" {
+			continue
+		}
+
+		if stmtBuf.Len() == 0 {
+			startLine = lineNum
+		}
+		if stmtBuf.Len() > 0 {
+			stmtBuf.WriteByte(' ')
+		}
+		stmtBuf.WriteString(trimmed)
+
+		if strings.Contains(trimmed, ";") {
+			if d := checkStatement(stmtBuf.String()); d != nil {
+				pass.Reportf(tf.LineStart(startLine), "%s", d.message)
+			}
+			stmtBuf.Reset()
 		}
 	}
+
+	if stmtBuf.Len() > 0 {
+		if d := checkStatement(stmtBuf.String()); d != nil {
+			pass.Reportf(tf.LineStart(startLine), "%s", d.message)
+		}
+	}
+
+	return nil
 }

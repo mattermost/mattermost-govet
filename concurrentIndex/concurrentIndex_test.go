@@ -31,7 +31,8 @@ func TestSQLDir(t *testing.T) {
 		},
 	}
 
-	scanSQLDir(pass, migrationsDir)
+	err := scanSQLDir(pass, migrationsDir)
+	require.NoError(t, err)
 
 	var files []string
 	for _, d := range diags {
@@ -49,22 +50,25 @@ func TestSQLDir(t *testing.T) {
 			dropCount++
 		}
 	}
-	assert.Equal(t, 2, createCount, "expected 2 CREATE INDEX diagnostics")
+	assert.Equal(t, 3, createCount, "expected 3 CREATE INDEX diagnostics")
 	assert.Equal(t, 2, dropCount, "expected 2 DROP INDEX diagnostics")
 
-	// Verify correct files were flagged
 	badCount := 0
 	nestedCount := 0
+	multilineCount := 0
 	for _, f := range files {
 		switch {
 		case strings.HasPrefix(f, "000002_bad"):
 			badCount++
 		case strings.HasPrefix(f, "000003_nested"):
 			nestedCount++
+		case strings.HasPrefix(f, "000004_multiline"):
+			multilineCount++
 		}
 	}
 	assert.Equal(t, 3, badCount, "expected 3 diagnostics from 000002_bad.up.sql")
 	assert.Equal(t, 1, nestedCount, "expected 1 diagnostic from sub/000003_nested.up.sql")
+	assert.Equal(t, 1, multilineCount, "expected 1 diagnostic from 000004_multiline.up.sql")
 }
 
 func TestSQLDirSkipsComments(t *testing.T) {
@@ -81,13 +85,26 @@ func TestSQLDirSkipsComments(t *testing.T) {
 		},
 	}
 
-	scanSQLDir(pass, migrationsDir)
+	err := scanSQLDir(pass, migrationsDir)
+	require.NoError(t, err)
 
 	for _, d := range diags {
 		pos := fset.Position(d.Pos)
 		require.NotContains(t, filepath.Base(pos.Filename), "000001_good",
 			"good migration file should not have diagnostics")
 	}
+}
+
+func TestSQLDirBadPath(t *testing.T) {
+	fset := token.NewFileSet()
+	pass := &analysis.Pass{
+		Analyzer: Analyzer,
+		Fset:     fset,
+		Report:   func(d analysis.Diagnostic) {},
+	}
+
+	err := scanSQLDir(pass, "/nonexistent/path")
+	assert.Error(t, err)
 }
 
 func TestCheckLine(t *testing.T) {
@@ -145,6 +162,20 @@ func TestCheckLine(t *testing.T) {
 			name: "plain string",
 			line: "just a regular string",
 		},
+		{
+			name:    "multi-statement with unsafe and safe",
+			line:    "CREATE INDEX idx_a ON t (c); CREATE INDEX CONCURRENTLY idx_b ON t (c);",
+			wantMsg: "use CREATE INDEX CONCURRENTLY instead of CREATE INDEX to avoid blocking DML",
+		},
+		{
+			name:    "multi-statement with safe then unsafe drop",
+			line:    "DROP INDEX CONCURRENTLY IF EXISTS idx_a; DROP INDEX IF EXISTS idx_b;",
+			wantMsg: "use DROP INDEX CONCURRENTLY instead of DROP INDEX to avoid blocking DML",
+		},
+		{
+			name: "multi-statement all safe",
+			line: "CREATE INDEX CONCURRENTLY idx_a ON t (c); DROP INDEX CONCURRENTLY IF EXISTS idx_b;",
+		},
 	}
 
 	for _, tt := range tests {
@@ -153,7 +184,7 @@ func TestCheckLine(t *testing.T) {
 			if tt.wantMsg == "" {
 				assert.Nil(t, d)
 			} else {
-				assert.NotNil(t, d)
+				require.NotNil(t, d)
 				assert.Equal(t, tt.wantMsg, d.message)
 			}
 		})
