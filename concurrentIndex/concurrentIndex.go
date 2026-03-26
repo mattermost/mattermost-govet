@@ -92,6 +92,9 @@ func run(pass *analysis.Pass) (interface{}, error) {
 }
 
 func scanSQLDir(pass *analysis.Pass, root string) error {
+	if _, err := os.Stat(root); os.IsNotExist(err) {
+		return nil
+	}
 	return filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err

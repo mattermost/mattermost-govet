@@ -104,7 +104,7 @@ func TestSQLDirBadPath(t *testing.T) {
 	}
 
 	err := scanSQLDir(pass, "/nonexistent/path")
-	assert.Error(t, err)
+	assert.NoError(t, err)
 }
 
 func TestCheckLine(t *testing.T) {
