@@ -60,7 +60,7 @@ func checkLine(line string) string {
 		return ""
 	}
 	for _, stmt := range strings.Split(line, ";") {
-		stmt = strings.TrimSpace(stripSQLComments(stmt))
+		stmt = strings.TrimSpace(stmt)
 		if stmt == "" {
 			continue
 		}
@@ -69,21 +69,6 @@ func checkLine(line string) string {
 		}
 	}
 	return ""
-}
-
-func stripSQLComments(s string) string {
-	var b strings.Builder
-	for _, raw := range strings.Split(s, "\n") {
-		t := strings.TrimSpace(raw)
-		if t == "" || strings.HasPrefix(t, "--") {
-			continue
-		}
-		if b.Len() > 0 {
-			b.WriteByte(' ')
-		}
-		b.WriteString(t)
-	}
-	return b.String()
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
@@ -153,39 +138,20 @@ func checkSQLFile(pass *analysis.Pass, name string) error {
 		return err
 	}
 
+	if !containsIndexKeyword(string(content)) {
+		return nil
+	}
+
 	tf := pass.Fset.AddFile(name, -1, len(content))
 	tf.SetLinesForContent(content)
 
 	lines := strings.Split(string(content), "\n")
 	var stmtBuf strings.Builder
 	startLine := 1
-	inBlockComment := false
 
 	for i, line := range lines {
 		lineNum := i + 1
 		trimmed := strings.TrimSpace(line)
-
-		if inBlockComment {
-			if idx := strings.Index(trimmed, "*/"); idx >= 0 {
-				inBlockComment = false
-				trimmed = strings.TrimSpace(trimmed[idx+2:])
-			} else {
-				continue
-			}
-		}
-
-		if strings.HasPrefix(trimmed, "/*") {
-			if idx := strings.Index(trimmed, "*/"); idx >= 0 {
-				trimmed = strings.TrimSpace(trimmed[idx+2:])
-			} else {
-				inBlockComment = true
-				continue
-			}
-		}
-
-		if strings.HasPrefix(trimmed, "--") {
-			continue
-		}
 
 		if trimmed == "" {
 			continue

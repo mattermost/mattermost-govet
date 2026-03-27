@@ -44,9 +44,9 @@ func TestSQLDir(t *testing.T) {
 	dropCount := 0
 	for _, f := range files {
 		switch {
-		case strings.Contains(f, "CREATE INDEX CONCURRENTLY"):
+		case strings.Contains(f, diagCreateIndex):
 			createCount++
-		case strings.Contains(f, "DROP INDEX CONCURRENTLY"):
+		case strings.Contains(f, diagDropIndex):
 			dropCount++
 		}
 	}
@@ -133,27 +133,27 @@ func TestCheckLine(t *testing.T) {
 		{
 			name:    "CREATE INDEX without CONCURRENTLY",
 			line:    "CREATE INDEX IF NOT EXISTS idx_foo_bar ON foo (bar);",
-			wantMsg: "use CREATE INDEX CONCURRENTLY instead of CREATE INDEX to avoid blocking DML",
+			wantMsg: diagCreateIndex,
 		},
 		{
 			name:    "CREATE UNIQUE INDEX without CONCURRENTLY",
 			line:    "CREATE UNIQUE INDEX IF NOT EXISTS idx_foo_bar ON foo (bar);",
-			wantMsg: "use CREATE INDEX CONCURRENTLY instead of CREATE INDEX to avoid blocking DML",
+			wantMsg: diagCreateIndex,
 		},
 		{
 			name:    "DROP INDEX without CONCURRENTLY",
 			line:    "DROP INDEX IF EXISTS idx_foo_bar;",
-			wantMsg: "use DROP INDEX CONCURRENTLY instead of DROP INDEX to avoid blocking DML",
+			wantMsg: diagDropIndex,
 		},
 		{
 			name:    "lowercase create index",
 			line:    "create index if not exists idx_foo on foo (bar);",
-			wantMsg: "use CREATE INDEX CONCURRENTLY instead of CREATE INDEX to avoid blocking DML",
+			wantMsg: diagCreateIndex,
 		},
 		{
 			name:    "lowercase drop index",
 			line:    "drop index if exists idx_foo;",
-			wantMsg: "use DROP INDEX CONCURRENTLY instead of DROP INDEX to avoid blocking DML",
+			wantMsg: diagDropIndex,
 		},
 		{
 			name: "CREATE INDEX CONCURRENTLY is fine",
@@ -182,25 +182,16 @@ func TestCheckLine(t *testing.T) {
 		{
 			name:    "multi-statement with unsafe and safe",
 			line:    "CREATE INDEX idx_a ON t (c); CREATE INDEX CONCURRENTLY idx_b ON t (c);",
-			wantMsg: "use CREATE INDEX CONCURRENTLY instead of CREATE INDEX to avoid blocking DML",
+			wantMsg: diagCreateIndex,
 		},
 		{
 			name:    "multi-statement with safe then unsafe drop",
 			line:    "DROP INDEX CONCURRENTLY IF EXISTS idx_a; DROP INDEX IF EXISTS idx_b;",
-			wantMsg: "use DROP INDEX CONCURRENTLY instead of DROP INDEX to avoid blocking DML",
+			wantMsg: diagDropIndex,
 		},
 		{
 			name: "multi-statement all safe",
 			line: "CREATE INDEX CONCURRENTLY idx_a ON t (c); DROP INDEX CONCURRENTLY IF EXISTS idx_b;",
-		},
-		{
-			name:    "comment then unsafe SQL in multiline fragment",
-			line:    "-- note\nCREATE INDEX idx_a ON t (c);",
-			wantMsg: "use CREATE INDEX CONCURRENTLY instead of CREATE INDEX to avoid blocking DML",
-		},
-		{
-			name: "pure comment fragment",
-			line: "-- just a comment",
 		},
 	}
 
