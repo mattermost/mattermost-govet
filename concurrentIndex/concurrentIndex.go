@@ -26,6 +26,9 @@ var (
 )
 
 var sqlPath string
+var minMigration int
+
+var migrationNumberRegex = regexp.MustCompile(`^\d+`)
 
 var Analyzer = &analysis.Analyzer{
 	Name: "concurrentIndex",
@@ -35,6 +38,7 @@ var Analyzer = &analysis.Analyzer{
 
 func init() {
 	Analyzer.Flags.StringVar(&sqlPath, "path", "", "Relative path to a directory of .sql files to scan recursively")
+	Analyzer.Flags.IntVar(&minMigration, "minMigration", 0, "Skip SQL files with a migration number below this value")
 }
 
 func checkStatement(stmt string) string {
@@ -114,6 +118,15 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	return nil, nil
 }
 
+func getMigrationNumberFromFilename(filename string) int {
+	m := migrationNumberRegex.FindString(filename)
+	if m == "" {
+		return -1
+	}
+	n, _ := strconv.Atoi(m)
+	return n
+}
+
 func scanSQLDir(pass *analysis.Pass, root string) error {
 	return filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -124,6 +137,11 @@ func scanSQLDir(pass *analysis.Pass, root string) error {
 		}
 		if d.IsDir() || !strings.HasSuffix(path, ".sql") {
 			return nil
+		}
+		if minMigration > 0 {
+			if n := getMigrationNumberFromFilename(d.Name()); n >= 0 && n < minMigration {
+				return nil
+			}
 		}
 		return checkSQLFile(pass, path)
 	})

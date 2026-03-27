@@ -92,6 +92,38 @@ func TestSQLDirBadPath(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestSQLDirMinMigration(t *testing.T) {
+	testdata := analysistest.TestData()
+	migrationsDir := filepath.Join(testdata, "migrations")
+
+	old := minMigration
+	t.Cleanup(func() { minMigration = old })
+	minMigration = 5
+
+	fset := token.NewFileSet()
+	var diags []analysis.Diagnostic
+	pass := &analysis.Pass{
+		Analyzer: Analyzer,
+		Fset:     fset,
+		Report: func(d analysis.Diagnostic) {
+			diags = append(diags, d)
+		},
+	}
+
+	err := scanSQLDir(pass, migrationsDir)
+	require.NoError(t, err)
+
+	for _, d := range diags {
+		pos := fset.Position(d.Pos)
+		base := filepath.Base(pos.Filename)
+		n := getMigrationNumberFromFilename(base)
+		require.GreaterOrEqual(t, n, 0, "expected numeric prefix in %s", base)
+		assert.GreaterOrEqual(t, n, 5,
+			"expected only migrations >= 5, got diagnostic from %s", base)
+	}
+	assert.Equal(t, 1, len(diags), "expected 1 diagnostic from migration 5+")
+}
+
 func TestCheckLine(t *testing.T) {
 	tests := []struct {
 		name    string
