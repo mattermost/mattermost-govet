@@ -47,28 +47,12 @@ func checkStatement(stmt string) string {
 	return ""
 }
 
-func hasNolintDirective(s string) bool {
-	if !strings.Contains(s, "nolint:concurrentIndex") {
-		return false
-	}
-	for _, raw := range strings.Split(s, "\n") {
-		t := strings.TrimSpace(raw)
-		if strings.HasPrefix(t, "--") && strings.Contains(t, "nolint:concurrentIndex") {
-			return true
-		}
-	}
-	return false
-}
-
 func containsIndexKeyword(s string) bool {
 	return strings.Contains(strings.ToLower(s), "index")
 }
 
 func checkLine(line string) string {
 	if !containsIndexKeyword(line) {
-		return ""
-	}
-	if hasNolintDirective(line) {
 		return ""
 	}
 	for _, stmt := range strings.Split(line, ";") {
@@ -158,7 +142,6 @@ func checkSQLFile(pass *analysis.Pass, name string) error {
 	var stmtBuf strings.Builder
 	startLine := 1
 	inBlockComment := false
-	nolint := false
 
 	for i, line := range lines {
 		lineNum := i + 1
@@ -183,9 +166,6 @@ func checkSQLFile(pass *analysis.Pass, name string) error {
 		}
 
 		if strings.HasPrefix(trimmed, "--") {
-			if strings.Contains(trimmed, "nolint:concurrentIndex") {
-				nolint = true
-			}
 			continue
 		}
 
@@ -210,9 +190,7 @@ func checkSQLFile(pass *analysis.Pass, name string) error {
 
 			stmt := strings.TrimSpace(current[:semi])
 			if stmt != "" {
-				if nolint {
-					nolint = false
-				} else if msg := checkStatement(stmt); msg != "" {
+				if msg := checkStatement(stmt); msg != "" {
 					pass.Reportf(tf.LineStart(startLine), "%s", msg)
 				}
 			}
@@ -226,7 +204,7 @@ func checkSQLFile(pass *analysis.Pass, name string) error {
 		}
 	}
 
-	if stmtBuf.Len() > 0 && !nolint {
+	if stmtBuf.Len() > 0 {
 		if msg := checkStatement(stmtBuf.String()); msg != "" {
 			pass.Reportf(tf.LineStart(startLine), "%s", msg)
 		}
