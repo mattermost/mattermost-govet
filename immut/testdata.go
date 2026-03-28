@@ -1,5 +1,6 @@
 //go:build ignore
 
+//nolint:govet
 package pkg
 
 //immut:type T
