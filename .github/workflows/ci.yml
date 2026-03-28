@@ -6,7 +6,7 @@ on:
   pull_request:
 
 env:
-    go-version: "1.24.6"
+    go-version: "1.25.8"
 
 jobs:
     check-golangci-lint:
@@ -20,9 +20,9 @@ jobs:
             with:
               go-version: ${{ env.go-version }}
           - name: Run golangci-lint
-            uses: golangci/golangci-lint-action@639cd343e1d3b897ff35927a75193d57cfcba299 # v3.6.0
+            uses: golangci/golangci-lint-action@7119f3d5ddced62a10a044847a6c6bb0f7a5e76a # v7.0.0
             with:
-              version: v1.64.7
+              version: v2.6.0
 
     build:
         name: Build
