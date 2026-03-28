@@ -38,9 +38,9 @@ func init() {
 }
 
 // formatNode converts AST node to string
-func formatNode(fset *token.FileSet, node interface{}) string {
+func formatNode(fset *token.FileSet, node any) string {
 	var typeNameBuf bytes.Buffer
-	printer.Fprint(&typeNameBuf, fset, node)
+	_ = printer.Fprint(&typeNameBuf, fset, node)
 	return typeNameBuf.String()
 }
 
@@ -59,7 +59,7 @@ func stringInSlice(str string, slice []string, partial bool) bool {
 
 // cleanRegexp removes parts of URL path regexp to be compatible with OpenAPI paths
 func cleanRegexp(s string) string {
-	return strings.Replace(s, ":[A-Za-z0-9]+", "", -1)
+	return strings.ReplaceAll(s, ":[A-Za-z0-9]+", "")
 }
 
 // splitHandlerByGroup checks if URL path regexp contains named groups, and splits them in separate paths to be compatible with OpenAPI paths
@@ -217,7 +217,7 @@ func validateComments(pass *analysis.Pass) ([]string, map[string]string) {
 	return initFunctions, routerPrefixes
 }
 
-func run(pass *analysis.Pass) (interface{}, error) {
+func run(pass *analysis.Pass) (any, error) {
 	if specFile == "" {
 		return nil, errors.New("Please supply a path to OpenAPI spec yaml file via -openApiSync.spec")
 	}
