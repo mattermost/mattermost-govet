@@ -1,4 +1,8 @@
-# Mattermost Go Vet
+# Mattermost Go Vet [Deprecated]
+
+> [!CAUTION]
+> This repository is deprecated and no longer maintained.
+> The code has been merged into the monorepo: https://github.com/mattermost/mattermost/pull/35869
 
 This repository contains mattermost-specific go-vet rules that are used to maintain code consistency in `mattermost`.
 
